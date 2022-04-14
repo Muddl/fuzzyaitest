@@ -28,32 +28,34 @@
 {% endblock navbar %}
 
 {% block body %}
-    <div id="main-container" class="container center row">
-        <div class="col-sm border border-dark bg-white">
-            <p class="text-center fs-4">Attacking</p>
-            <img id="attacking-piece" src="{% static '/Chessboard/wB.png' %}" alt="attacking piece" style="width: 125px; visibility: hidden;" class="displayed rounded mx-auto d-block">
-            <p class="text-center subtitle is-4">Waiting for Attack!</p>
-            <img src="{% static '/dice/dice_3.png' %}" alt="dice" style="width: 125px;" class="displayed rounded mx-auto d-block dice" id="die">
-            <img id="defending-piece" src="{% static '/Chessboard/bN.png' %}" alt="defending piece" style="width: 125px; visibility: hidden;" class="displayed rounded mx-auto d-block">
-            <p class="text-center fs-4">Defending</p>
-        </div>
-
-        <!-- Captured Pieces by each side -->
-        <div class="col-sm">
-            <div id="white-captured-con" class="d-flex-inline flex-row">
-                <p>AI captured pieces:</p>
+    <div id="main-container" class="container">
+        <div class="row">
+            <div class="col-sm border border-dark bg-white">
+                <p class="text-center fs-4">Attacking</p>
+                <img id="attacking-piece" src="{% static '/Chessboard/wB.png' %}" alt="attacking piece" style="width: 125px; visibility: hidden;" class="displayed rounded mx-auto d-block">
+                <p class="text-center subtitle is-4">Waiting for Attack!</p>
+                <img src="{% static '/dice/dice_3.png' %}" alt="dice" style="width: 125px;" class="displayed rounded mx-auto d-block dice" id="die">
+                <img id="defending-piece" src="{% static '/Chessboard/bN.png' %}" alt="defending piece" style="width: 125px; visibility: hidden;" class="displayed rounded mx-auto d-block">
+                <p class="text-center fs-4">Defending</p>
             </div>
+    
+            <!-- Captured Pieces by each side -->
+            <div class="col">
+                <div id="white-captured-con" class="d-flex-inline flex-row">
+                    <p>AI captured pieces:</p>
+                </div>
+                
+                <div id="my_board" style="width: 650px"></div>
             
-            <div id="my_board" style="width: 650px"></div>
-        
-            <div id="black-captured-con" class="d-flex-inline flex-row">
-                <p>Player captured pieces:</p>
+                <div id="black-captured-con" class="d-flex-inline flex-row">
+                    <p>Player captured pieces:</p>
+                </div>
             </div>
-        </div>
-
-        <!-- Move Log Column -->
-        <div id="move_log" class="col-sm border border-dark bg-white">
-            <p class="text-center fs-4">Move Log</p>
+    
+            <!-- Move Log Column -->
+            <div id="move_log" class="col-sm border border-dark bg-white">
+                <p class="text-center fs-4">Move Log</p>
+            </div>
         </div>
     </div>
 {% endblock body %}

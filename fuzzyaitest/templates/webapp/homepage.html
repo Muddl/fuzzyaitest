@@ -20,7 +20,7 @@
 {% endblock navbar %}
 
 {% block body %}
-    <div class="container align-items-stretch d-flex flex-column flex-wrap align-items-baseline">
+    <div class="container align-items-stretch d-flex flex-wrap align-items-baseline">
         {% for running_game in ai %}
         <div class="card border-primary m-1" style="width: 250px">
             <div class="card-header text-center">
@@ -35,7 +35,10 @@
         {% empty %}
             <p>There aren't any created AI games right now. </p>
         {% endfor %}
-        <a class="btn btn-secondary mx-2" href="/create" role="button">Create</a>
     </div>
-    <hr />
+    <div class="container">
+        <div class="row d-flex justify-content-center">
+            <a class="btn btn-secondary mx-2" href="/create" role="button">Create</a>
+        </div>
+    </div>
 {% endblock body %}
