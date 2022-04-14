@@ -1,0 +1,59 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block title %}Live Game{% endblock title %}
+
+{% block cdn %}
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css" integrity="sha384-q94+BZtLrkL1/ohfjR8c6L+A6qzNH9R2hBLwyoAfu3i/WCvQjzL2RQJ3uNHDISdU" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.min.js" integrity="sha512-B4skI5FiLurS86aioJx9VfozI1wjqrn6aTdJH+YQUmCZum/ZibPBTX55k5d9XM6EsKePDInkLVrN7vPmJxc1qA==" crossorigin="anonymous"></script>  
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js" integrity="sha384-8Vi8VHwn3vjQ9eUHUxex3JSN/NFqUg3QbPyX8kWyb93+8AC/pPWTzj+nHtbC5bxD" crossorigin="anonymous"></script>
+    <script type="module" src={% static 'js/game.js' %}></script>
+{% endblock %}
+
+{% block navbar %}
+    <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+            <a class="nav-link" href="/">Homepage</a>
+        </li>
+    </ul>
+
+    <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+            <a class="nav-link" href="/accounts/logout">Logout</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active"><b>Hello, {{ user.username }}</b></a>
+        </li>
+    </ul>
+{% endblock navbar %}
+
+{% block body %}
+    <div id="main-container" class="container center row">
+        <div class="col-sm border border-dark bg-white">
+            <p class="text-center fs-4">Attacking</p>
+            <img id="attacking-piece" src="{% static '/Chessboard/wB.png' %}" alt="attacking piece" style="width: 125px; visibility: hidden;" class="displayed rounded mx-auto d-block">
+            <p class="text-center subtitle is-4">Waiting for Attack!</p>
+            <img src="{% static '/dice/dice_3.png' %}" alt="dice" style="width: 125px;" class="displayed rounded mx-auto d-block dice" id="die">
+            <img id="defending-piece" src="{% static '/Chessboard/bN.png' %}" alt="defending piece" style="width: 125px; visibility: hidden;" class="displayed rounded mx-auto d-block">
+            <p class="text-center fs-4">Defending</p>
+        </div>
+
+        <!-- Captured Pieces by each side -->
+        <div class="col-sm">
+            <div id="white-captured-con" class="d-flex-inline flex-row">
+                <p>AI captured pieces:</p>
+            </div>
+            
+            <div id="my_board" style="width: 650px"></div>
+        
+            <div id="black-captured-con" class="d-flex-inline flex-row">
+                <p>Player captured pieces:</p>
+            </div>
+        </div>
+
+        <!-- Move Log Column -->
+        <div id="move_log" class="col-sm border border-dark bg-white">
+            <p class="text-center fs-4">Move Log</p>
+        </div>
+    </div>
+{% endblock body %}

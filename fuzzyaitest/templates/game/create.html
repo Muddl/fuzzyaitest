@@ -1,0 +1,40 @@
+{% extends 'layout.html' %}
+
+{% block title %}Create A Game{% endblock title %}
+
+{% block navbar %}
+    <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+            <a class="nav-link" href="/">Homepage</a>
+        </li>
+    </ul>
+
+    <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+            <a class="nav-link" href="/accounts/logout">Logout</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active"><b>Hello, {{ user.username }}</b></a>
+        </li>
+    </ul>
+{% endblock navbar %}
+
+{% block body %}
+    <div class="container mt-5 offset-2 col-8">
+        <form class="" action="{% url 'create' %}" method="POST">
+            {% csrf_token %} 
+            <div class="row">
+                <div class="col-12 p-2">
+                    <label for="level" class="form-label" style = "font-family: 'MedievalSharp'; color: white;">Level (only needed for public room)</label>
+                    <select class="custom-select" id="level" name="level" required>
+                        <option value="undef" >Choose...</option>
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary m-3" type="submit" style = "font-family: 'MedievalSharp'; color: white;">Create Game</button>
+            </div>
+        </form>
+    </div>
+{% endblock body %}
