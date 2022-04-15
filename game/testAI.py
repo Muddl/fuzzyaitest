@@ -1,4 +1,4 @@
-# from engine import *
+from engine import *
 import pandas as pd
 import warnings
 import string
@@ -155,75 +155,43 @@ dict_test_board_state_1 = {
 }
 
 dict_test_board_state_2 = {
-    "a8": "bR",
-    "d8": "bQ",
     "e8": "bK",
     "a7": "bP",
     "b7": "bP",
-    "g7": "bP",
+    "f7": "bP",
     "h7": "bP",
     "a2": "wP",
     "b2": "wP",
-    "g2": "bN",
+    "c2": "wP",
     "h2": "wP",
-    "d1": "wQ",
     "e1": "wK",
     "f1": "wB",
-    "c3": "wP",
-    "d3": "wP",
+    "h1": "wR",
+    "c4": "wP",
     "e4": "wP",
     "f4": "wP",
-    "b4": "wN",
-    "d2": "wB",
+    "d3": "wQ",
+    "g3": "wP",
     "f3": "wN",
-    "d4": "wR",
-    "a3": "wR",
-    "c5": "bP",
-    "d6": "bP",
+    "c3": "wB",
+    "a3": "wN",
+    "e2": "wR",
     "e6": "bP",
-    "f5": "bP",
-    "d5": "bB",
+    "d6": "bP",
+    "c5": "bP",
+    "f6": "bP",
+    "g5": "bN",
+    "g7": "bR",
+    "c6": "bB",
+    "a6": "bN",
+    "f5": "bQ",
     "d7": "bB",
-    "c6": "bN",
-    "f6": "bR"
+    "b8": "bR"
 }
 
-dict_test_board_state_3 = {
-    "a6": "bR",
-    "b8": "bN",
-    "c8": "bB",
-    "d8": "bQ",
-    "e8": "bK",
-    "f8": "bB",
-    "g8": "bN",
-    "h8": "bR",
-    "a7": "bP",
-    "b7": "bP",
-    "c7": "bP",
-    "d7": "bP",
-    "e7": "bP",
-    "f7": "bP",
-    "g7": "bP",
-    "h7": "bP",
-    "a2": "wP",
-    "b2": "wP",
-    "f2": "wP",
-    "g2": "wP",
-    "h2": "wP",
-    "a1": "wR",
-    "b1": "wN",
-    "c1": "wB",
-    "d1": "wQ",
-    "e1": "wK",
-    "f1": "wB",
-    "g1": "wN",
-    "h1": "wR",
-    "d3": "wP",
-    "c3": "wP",
-    "e3": "wP"
-}
 
-#board_state_from_frontend = json receive
+
+
 
 def get_board_notation(coordinates):
     return str(
@@ -296,34 +264,23 @@ def get_movesets_per_board_state(board_state):
     return _df.sort_values(by=['capture_probability'], ascending=[False]) #HERE 
 
 
-def get_possible_moveset_per_piece(position, piece, team, friendly_list, enemy_list):
-    move_list = []
-    if team == color_cpu:
-        blacklist = friendly_list
-    else:
-        blacklist = enemy_list
-    # find the movement range of the current piece type
-    starting_coordinates = get_board_coordinates(position)  # converted [x, y]
-    constraints = df_possibilities[df_possibilities['piece'] == piece].values.tolist()[
-        0]
-    movement_range = constraints[1]
+def get_possible_moveset_per_piece(position, piece, team, friendly_list, enemy_list, board_state):
+    
+    
 
-    # iterate each potential moveset per piece
-    for i in range(movement_range[0], movement_range[1] + 1):
-        for j in range(movement_range[0], movement_range[1] + 1):
-            # this is pawn forward-directional logic
-            if (piece == 'p' and ((color_cpu == team and j >= 0) or (color_user == team and j <= 0))):
-                pass
-            elif (i == 0 or
-                  j == 0 or
-                    abs(i) == abs(j)):  # i/j == 0 are lateral moves, i == j are diagonal moves
-                loc = [i, j]
-                proposed_coordinates = np.add(loc, starting_coordinates)
-                proposed_position = get_board_notation(proposed_coordinates)
-                # keep movesets within allowed chess board positions not currently occupied by friendly
-                if 0 < proposed_coordinates[0] <= 8 and 0 < proposed_coordinates[1] <= 8 and proposed_position not in blacklist:
-                    move_list += [proposed_position]
+    if team == 'b':
+        board_state_obj = Boardstate(board_state, False, 0)
+    else:
+        board_state_obj = Boardstate(board_state, True, 0)
+    
+    valid_moves = board_state_obj.getValidMoveset(Piece(team, piece.upper(), position))
+    move_list = [valid_moves[0] + valid_moves[1]][0]
+    
+
+    #prints for testing, will be removed
+    print("possible moves for piece: " + team + piece + " at position: " + position + ": " + str(move_list))
     return move_list
+
 
 
 def parse_board_state(board_state, iteration, corps_list, initial_piece_reference, list_of_corps_assignments):
@@ -353,7 +310,7 @@ def parse_board_state(board_state, iteration, corps_list, initial_piece_referenc
             _piece_type = _piece[1].lower()
             _team = _piece[0]
             _moveset = get_possible_moveset_per_piece(
-                _starting_position, _piece_type, _team, list_of_friendly_spaces, list_of_enemy_spaces)
+                _starting_position, _piece_type, _team, list_of_friendly_spaces, list_of_enemy_spaces, board_state)
             _possible_moves = len(_moveset)
             # convert piece data into series
             _series = pd.Series([_pieceID, _piece, _piece_type, _team,
@@ -373,6 +330,7 @@ def parse_board_state(board_state, iteration, corps_list, initial_piece_referenc
     return current_turn_movesets
 
 def produceMove(boardstate):
+    
     current_board_state = boardstate #set to board_state_from_frontend
     list_of_corps_assignments = get_list_of_initial_corps_assignments(current_board_state)
 
@@ -388,4 +346,8 @@ def produceMove(boardstate):
         command_list.remove(current_turn_movesets.iloc[0][3])
         i += 1
 
-    return move_to_send
+    print('Recommended move: ' + move_to_send)
+    #return move_to_send
+
+#locally testing, will be removed
+produceMove(dict_test_board_state_2)
