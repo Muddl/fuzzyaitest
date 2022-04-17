@@ -346,6 +346,40 @@ def produceMove(boardstate):
         command_list.remove(current_turn_movesets.iloc[0][3])
         i += 1
 
+    #active piece
+    Apos = move_to_send[0:2]
+    Acolor = boardstate[Apos][:1]
+    Arank = boardstate[Apos][1:2]
+
+    #target piece
+    Tpos = move_to_send[3:]
+    try:
+        Tcolor = boardstate[Tpos][:1]
+        Trank = boardstate[Tpos][1:2]
+    except:
+        Tcolor = Acolor
+        Trank = Arank
+    
+    if (Acolor == Tcolor):
+        action_type = 'MOVEMENT'
+    else:
+        action_type = 'ATTACK_ATTEMPT'
+    
+    json_to_return = {
+        'actionType': action_type,
+        'activePiece': {
+            'pos': Apos,
+            'color': Acolor,
+            'rank': Arank
+        },
+        'targetPiece': {
+            'pos': Tpos,
+            'color': Tcolor,
+            'rank': Trank
+        }
+    }
+
+    print(json_to_return)
     print('Recommended move: ' + move_to_send)
     #return move_to_send
 
