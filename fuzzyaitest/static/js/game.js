@@ -411,11 +411,18 @@ socket.onmessage = (message) => {
         data.highlight_pos.forEach(pos => greySquare(pos));
     }
     // On AI_ACTION_REQ actionType
-    else if(data.actionType=="AI_TURN_REQ") {
+    else if(data.actionType=="AI_TURN_RES") {
         local_ai_action_list = data.black_actions;
         local_ai_move_list = data.black_moves;
-        console.log(local_ai_action_list);
+
+        console.log(local_ai_action_list[0].activePiece.rank);
         console.log(local_ai_move_list);
+
+        for (let i = 0; i < 3; i++) {
+            if (local_ai_move_list[i] != null && local_ai_action_list[i].activePiece.rank != 'R') {
+                board.move(local_ai_move_list[i]);
+            }
+        }
     }
 };
 
