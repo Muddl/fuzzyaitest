@@ -54,6 +54,7 @@ const onDragStart = (source, piece) => {
             'rank': piece.substring(1,2)
         }
     });
+    console.log(highlightJson);
     socket.send(highlightJson);
 };
 

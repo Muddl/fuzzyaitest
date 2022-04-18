@@ -442,9 +442,9 @@ def getAdjSquares(pos, diag):
             adj = [f"a{str(row+1)}", f"a{str(row-1)}", f"b{str(row)}"] if not diag else [f"a{str(row+1)}", f"a{str(row-1)}", f"b{str(row)}", f"b{str(row-1)}", f"b{str(row+1)}"]
         if chr(col_int) == "h": # Right edge minus corners
             adj = [f"h{str(row+1)}", f"h{str(row-1)}", f"g{str(row)}"] if not diag else [f"h{str(row+1)}", f"h{str(row-1)}", f"g{str(row)}", f"g{str(row-1)}", f"g{str(row+1)}"]
-        if row == "8": # Top edge minus corners
+        if row == 8: # Top edge minus corners
             adj = [f"{chr(col_int+1)}8", f"{chr(col_int-1)}8", f"{chr(col_int)}7"] if not diag else [f"{chr(col_int+1)}8", f"{chr(col_int-1)}8", f"{chr(col_int)}7", f"{chr(col_int+1)}7", f"{chr(col_int-1)}7"]
-        if row == "1": # Bot edge minus corners
+        if row == 1: # Bot edge minus corners
             adj = [f"{chr(col_int+1)}1", f"{chr(col_int-1)}1", f"{chr(col_int)}2"] if not diag else [f"{chr(col_int+1)}1", f"{chr(col_int-1)}1", f"{chr(col_int)}2", f"{chr(col_int+2)}7", f"{chr(col_int-1)}2"]
     
     if ((pos not in edges) and (pos not in corners)):
