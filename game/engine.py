@@ -3,7 +3,7 @@
 # We also were roughly following the sprint cycle chart given in the first week's presentation.
 # Next in progress for engine: Add knight blitzes, end states, timers, and a hook for the AI to latch into.
 from typing import Dict
-import random, json, uuid
+import random
 from enum import Enum
 
 # Constants
@@ -30,6 +30,12 @@ class Rank(Enum):
     ROOK = "R"
     BISHOP = "B"
     PAWN = "P"
+    
+class Corp(Enum):
+    KING = "K"
+    LEFT_BISHOP = "LB"
+    RIGHT_BISHOP = "RB"
+    LEADER = "L"
 
 class WinFlag(Enum): # 0 for no kings captured, 1 for white king captured, 2 for black king captured
     NONE = 0
@@ -44,10 +50,11 @@ class ActionType(Enum):
 # Classes
 
 class Piece:
-    def __init__(self, color, rank, pos):
+    def __init__(self, color, rank, pos, corp):
         self.color = color
         self.rank = rank
         self.pos = pos
+        self.corp = corp
     
     def getColor(self):
         return self.color
@@ -55,40 +62,37 @@ class Piece:
     def getRank(self):
         return self.rank
     
+    def getCorp(self):
+        return self.corp
+    
     def getPos(self):
         return self.pos
     
-    def getPair(self):
-        return { self.pos: (self.color + self.rank) }
-    
     def __eq__(self, other):
         if isinstance(other, Piece):
-            return self.getPair() == other.getPair()        
-
-class Action:
-    def __init__(self, parsedActionType, parsedActivePiece, parsedTargetPiece):
-        self.actionType = ActionType(parsedActionType)
-        self.activePiece = Piece(Color(parsedActivePiece["color"]), Rank(parsedActivePiece["rank"]), parsedActivePiece["pos"])
-        if (self.actionType == ActionType.MOVEMENT) or (self.actionType == ActionType.ATTACK_ATTEMPT):
-            self.targetPiece = Piece(Color(parsedTargetPiece["color"]), Rank(parsedTargetPiece["rank"]), parsedTargetPiece["pos"])
-        else:
-            self.targetPiece = None
-        self.actionID = uuid.uuid4()
+            return self.getPair() == other.getPair()
+        
+class Corp:
+    def __init__(self, leader_piece, under_command):
+        self.leader = leader_piece
+        self.under_command = under_command
     
-    # Overrides the equal method for moves. A move = another move - IMPORTANT
-    def __eq__(self, other):
-        if isinstance(other, Action):
-            return self.actionID == other.actionID
-        return False
+    def getLeader(self):
+        return self.leader
+    
+    def getUnderCommand(self):
+        return self.under_command
 
 class Boardstate:
     # Initializes an empty board and game in code (not gui)
-    def __init__(self, boardstate: Dict[str, str], whiteMove: bool, actionCounter: int):
+    def __init__(self, boardstate: Dict[str, str], whiteMove: bool, corpList: str):
         # Game board from white's perspective
         # NOTE - I've seen this done with just strings, numbers, etc.
         # All are probably more efficient but a pain to read and work with
         
-        self.board = boardstate
+        self.board = boardstate # Board representation in Position Obj notation
+        
+        self.corpList = self.parseCorpList(corpList)  # Contains the current state of corps & available actions for each
         
         self.attackDict = {
             "K": {"K": 4, "Q": 4, "N": 4, "B": 4, "R": 5, "P": 1},
@@ -100,11 +104,45 @@ class Boardstate:
         }
         
         self.whiteMove = whiteMove  # Keeps track of whose turn it is
-        self.actionCounter = actionCounter  # Counts number of moves (or actions) made
+        
         self.kingDead = WinFlag(0) # Initially no kings dead  
         self.knightsAttacked = []  # Stores the position of knights that have attempted an attack already
         self.blitzableKnightSquares = []  # Stores the possible squares a knight could blitz from.
         self.gameHistory = []  # Keeps a history of the actions in a game.
+    
+    def parseCorpList(self, corpList):
+        output_corp_list = []
+        
+        dict_corp_list = eval(corpList)
+        
+        if (dict_corp_list.has_key("leftBishopCorp")):
+            dict_corp_list["leftBishopCorp"]["leader"] = Piece(Color(dict_corp_list["leftBishopCorp"]["leader"]["color"]), Rank(dict_corp_list["leftBishopCorp"]["leader"]["rank"]), dict_corp_list["leftBishopCorp"]["leader"]["pos"], Corp(dict_corp_list["leftBishopCorp"]["leader"]["corp"]))
+            new_under_command = []
+            for piece in dict_corp_list["leftBishopCorp"]["under_command"]:
+                formatted_piece = Piece(Color(piece["color"]), Rank(piece["rank"]), piece["pos"], Corp(piece["corp"]))
+                new_under_command.append(formatted_piece)
+            dict_corp_list["leftBishopCorp"]["under_command"] = new_under_command
+            output_corp_list.append(dict_corp_list["leftBishopCorp"])
+            
+        if (dict_corp_list.has_key("rightBishopCorp")):
+            dict_corp_list["rightBishopCorp"]["leader"] = Piece(Color(dict_corp_list["rightBishopCorp"]["leader"]["color"]), Rank(dict_corp_list["rightBishopCorp"]["leader"]["rank"]), dict_corp_list["rightBishopCorp"]["leader"]["pos"], Corp(dict_corp_list["rightBishopCorp"]["leader"]["corp"]))
+            new_under_command = []
+            for piece in dict_corp_list["rightBishopCorp"]["under_command"]:
+                formatted_piece = Piece(Color(piece["color"]), Rank(piece["rank"]), piece["pos"], Corp(piece["corp"]))
+                new_under_command.append(formatted_piece)
+            dict_corp_list["rightBishopCorp"]["under_command"] = new_under_command
+            output_corp_list.append(dict_corp_list["rightBishopCorp"])
+            
+        if (dict_corp_list.has_key("kingCorp")):
+            dict_corp_list["kingCorp"]["leader"] = Piece(Color(dict_corp_list["kingCorp"]["leader"]["color"]), Rank(dict_corp_list["kingCorp"]["leader"]["rank"]), dict_corp_list["kingCorp"]["leader"]["pos"], Corp(dict_corp_list["kingCorp"]["leader"]["corp"]))
+            new_under_command = []
+            for piece in dict_corp_list["kingCorp"]["under_command"]:
+                formatted_piece = Piece(Color(piece["color"]), Rank(piece["rank"]), piece["pos"], Corp(piece["corp"]))
+                new_under_command.append(formatted_piece)
+            dict_corp_list["kingCorp"]["under_command"] = new_under_command
+            output_corp_list.append(dict_corp_list["kingCorp"])
+        
+        return output_corp_list
     
     # Function that moves the pieces, adds it to the game history, and swaps players - IMPORTANT
     def processAction(self, parsedAction):
@@ -227,16 +265,18 @@ class Boardstate:
             case 'N':
                 return self.getValidKnightMoveset(selected)
             case _:
-                return ([], [])
+                return ([], [], [])
     
     # Pawns can only move forward, but they CAN move diagonally as well as attack diagonally, so long as it's toward enemy
     def getPawnValidMoveset(self, selected):
         selectedColor = selected.getColor()
         selectedRank = selected.getRank()
         selectedPos = selected.getPos()
+        selectedCommand = selected.getCommand()
         
-        empty_spaces = []
-        enemy_spaces = []
+        in_range = []
+        setup = []
+        movement = []
         
         base_list = getAdjSquares(selectedPos, True) # Base surrounding adjacent squares for current pawn position
         

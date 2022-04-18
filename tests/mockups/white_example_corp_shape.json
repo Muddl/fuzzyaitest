@@ -1,0 +1,113 @@
+{
+    "kingCorp": {
+        "leader": {
+            "pos": "e1",
+            "color" : "w",
+            "rank" : "K",
+            "corp" : "L"
+        },
+        "under_command": [
+            {
+                "pos": "a1",
+                "color" : "w",
+                "rank" : "R",
+                "corp" : "K"
+            },
+            {
+                "pos": "h1",
+                "color" : "w",
+                "rank" : "R",
+                "corp" : "K"
+            },
+            {
+                "pos": "d1",
+                "color" : "w",
+                "rank" : "Q",
+                "corp" : "K"
+            },
+            {
+                "pos": "d2",
+                "color" : "w",
+                "rank" : "P",
+                "corp" : "K"
+            },
+            {
+                "pos": "e2",
+                "color" : "w",
+                "rank" : "P",
+                "corp" : "K"
+            }
+        ],
+        "command_authority_remaining": 1
+    },
+    "leftBishopCorp": {
+        "leader": {
+            "pos": "c1",
+            "color" : "w",
+            "rank" : "B",
+            "corp" : "L"
+        },
+        "under_command": [
+            {
+                "pos": "a2",
+                "color" : "w",
+                "rank" : "P",
+                "corp" : "LB"
+            },
+            {
+                "pos": "b2",
+                "color" : "w",
+                "rank" : "P",
+                "corp" : "LB"
+            },
+            {
+                "pos": "c2",
+                "color" : "w",
+                "rank" : "P",
+                "corp" : "LB"
+            },
+            {
+                "pos": "b1",
+                "color" : "w",
+                "rank" : "N",
+                "corp" : "LB"
+            }
+        ],
+        "command_authority_remaining": 1
+    },
+    "rightBishopCorp": {
+        "leader": {
+            "pos": "f1",
+            "color" : "w",
+            "rank" : "B",
+            "corp" : "L"
+        },
+        "under_command": [
+            {
+                "pos": "f2",
+                "color" : "w",
+                "rank" : "P",
+                "corp" : "RB"
+            },
+            {
+                "pos": "g2",
+                "color" : "w",
+                "rank" : "P",
+                "corp" : "RB"
+            },
+            {
+                "pos": "h2",
+                "color" : "w",
+                "rank" : "P",
+                "corp" : "RB"
+            },
+            {
+                "pos": "g1",
+                "color" : "w",
+                "rank" : "N",
+                "corp" : "RB"
+            }
+        ],
+        "command_authority_remaining": 1
+    }
+}
