@@ -1,0 +1,37 @@
+{
+    "test_movement": {
+        "actionType": "MOVEMENT",
+        "activePiece": {
+            "pos": "c2",
+            "color": "w",
+            "rank": "P"
+        },
+        "targetPiece": {
+            "pos": "c3",
+            "color": "w",
+            "rank": "P"
+        }
+    },
+    "test_attack": {
+        "actionType": "ATTACK_ATTEMPT",
+        "activePiece": {
+            "pos": "a4",
+            "color": "w",
+            "rank": "P"
+        },
+        "targetPiece": {
+            "pos": "a5",
+            "color": "b",
+            "rank": "P"
+        },
+        "blitz": false
+    },
+    "test_highlight": {
+        "actionType": "HIGHLIGHT",
+        "activePiece": {
+            "pos": "c2",
+            "color": "w",
+            "rank": "P"
+        }
+    }
+}
