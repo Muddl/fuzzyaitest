@@ -416,55 +416,6 @@ class Boardstate:
             self.blitzableKnightSquares = blitzDict
 
         return (empty_squares, enemy_squares)
-
-    def parseMoveString(self, movestring):
-        activePos = movestring[0:2]
-        activeColor = self.board.get(activePos)[0]
-        activeRank = self.board.get(activePos)[1]
-        
-        targetPos = movestring[3:5]
-        targetColor = self.board.get(targetPos)[0]
-        targetRank = self.board.get(targetPos)[0]
-        
-        if targetPos not in self.board:
-            movementAction = {
-                'actionType': 'MOVEMENT',
-                'isAIGame': True,
-                'activePiece': {
-                    'pos': activePos,
-                    'color': activeColor,
-                    'rank': activeRank
-                },
-                'targetPiece': {
-                    'pos': targetPos,
-                    'color': targetColor,
-                    'rank': targetRank
-                },
-                'actionCount': self.actionCounter,
-                'whiteMove': self.whiteMove
-            }
-            return True, movementAction
-        elif activeRank != "N":
-            attackAttemptAction = {
-                'actionType': 'ATTACK_ATTEMPT',
-                'isAIGame': True,
-                'activePiece': {
-                    'pos': activePos,
-                    'color': activeColor,
-                    'rank': activeRank
-                },
-                'targetPiece': {
-                    'pos': targetPos,
-                    'color': targetColor,
-                    'rank': targetRank
-                },
-                'actionCount': self.actionCounter,
-                'whiteMove': self.whiteMove
-            }
-            return True, attackAttemptAction
-        elif targetPos in self.blitzableKnightSquares:
-            pass
-        return False, ""
             
 
 # Recieves an algebraic position on the board and a boolean representing if the returned list should include diagonal adjancencies

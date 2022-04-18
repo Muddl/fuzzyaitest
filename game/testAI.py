@@ -1,4 +1,4 @@
-from engine import *
+from game.engine import *
 import pandas as pd
 import warnings
 import string
@@ -189,10 +189,6 @@ dict_test_board_state_2 = {
     "b8": "bR"
 }
 
-
-
-
-
 def get_board_notation(coordinates):
     return str(
         list_of_letters[coordinates[0]-1]) + str(coordinates[1])
@@ -264,30 +260,21 @@ def get_movesets_per_board_state(board_state):
     return _df.sort_values(by=['capture_probability'], ascending=[False]) #HERE 
 
 
-def get_possible_moveset_per_piece(position, piece, team, friendly_list, enemy_list, board_state):
-    
-    
-
+def get_possible_moveset_per_piece(position, piece, team, board_state, whiteMove, actionCounter):
     if team == 'b':
-        board_state_obj = Boardstate(board_state, False, 0)
+        board_state_obj = Boardstate(board_state, whiteMove, actionCounter)
     else:
-        board_state_obj = Boardstate(board_state, True, 0)
+        board_state_obj = Boardstate(board_state, whiteMove, actionCounter)
     
     valid_moves = board_state_obj.getValidMoveset(Piece(team, piece.upper(), position))
     move_list = [valid_moves[0] + valid_moves[1]][0]
     
-
-    #prints for testing, will be removed
-    print("possible moves for piece: " + team + piece + " at position: " + position + ": " + str(move_list))
     return move_list
 
 
-
-def parse_board_state(board_state, iteration, corps_list, initial_piece_reference, list_of_corps_assignments):
+def parse_board_state(board_state, iteration, corps_list, initial_piece_reference, list_of_corps_assignments, whiteMove, actionCounter):
     df_converted_board_state = pd.DataFrame(
         columns=['piece_ID', 'piece', 'piece_type', 'color', 'starting_position', 'corps', 'moveset', 'possible_moves', ])
-    list_of_friendly_spaces, list_of_enemy_spaces = get_list_of_spaces(
-        board_state)
     # get all possible movesets per piece (and respective positions)
     for i, position in enumerate(board_state.keys(), start=1000):
         _starting_position = position
@@ -310,7 +297,7 @@ def parse_board_state(board_state, iteration, corps_list, initial_piece_referenc
             _piece_type = _piece[1].lower()
             _team = _piece[0]
             _moveset = get_possible_moveset_per_piece(
-                _starting_position, _piece_type, _team, list_of_friendly_spaces, list_of_enemy_spaces, board_state)
+                _starting_position, _piece_type, _team, board_state, whiteMove, actionCounter)
             _possible_moves = len(_moveset)
             # convert piece data into series
             _series = pd.Series([_pieceID, _piece, _piece_type, _team,
@@ -329,59 +316,71 @@ def parse_board_state(board_state, iteration, corps_list, initial_piece_referenc
     #return new_board_state, current_turn_movesets
     return current_turn_movesets
 
-def produceMove(boardstate):
-    
+def produceAction(boardstate, whiteMove, actionCounter):
     current_board_state = boardstate #set to board_state_from_frontend
     list_of_corps_assignments = get_list_of_initial_corps_assignments(current_board_state)
-
+    
     moves_to_send = []
 
     command_list = [1, 2, 3]
     i = 1
     while len(command_list) > 2:
-        current_turn_movesets = parse_board_state(current_board_state, i, command_list, initial_piece_reference, list_of_corps_assignments)
-        #print(current_turn_movesets)
+        current_turn_movesets = parse_board_state(current_board_state, i, command_list, initial_piece_reference, list_of_corps_assignments, whiteMove, actionCounter)
+        print(current_turn_movesets)
         move_to_send = current_turn_movesets.iloc[0]['starting_position_attack'] + '-' + current_turn_movesets.iloc[0]['potential_position']
         moves_to_send.append(move_to_send)
         command_list.remove(current_turn_movesets.iloc[0][3])
         i += 1
-
+    
     #active piece
     Apos = move_to_send[0:2]
     Acolor = boardstate[Apos][:1]
     Arank = boardstate[Apos][1:2]
-
     #target piece
     Tpos = move_to_send[3:]
+    
     try:
         Tcolor = boardstate[Tpos][:1]
         Trank = boardstate[Tpos][1:2]
+        
     except:
         Tcolor = Acolor
         Trank = Arank
+        
     
     if (Acolor == Tcolor):
-        action_type = 'MOVEMENT'
-    else:
-        action_type = 'ATTACK_ATTEMPT'
-    
-    json_to_return = {
-        'actionType': action_type,
-        'activePiece': {
-            'pos': Apos,
-            'color': Acolor,
-            'rank': Arank
-        },
-        'targetPiece': {
-            'pos': Tpos,
-            'color': Tcolor,
-            'rank': Trank
+        action_to_send = {
+            'actionType': 'MOVEMENT',
+            'isAIGame': True,
+            'activePiece': {
+                'pos': Apos,
+                'color': Acolor,
+                'rank': Arank
+            },
+            'targetPiece': {
+                'pos': Tpos,
+                'color': Tcolor,
+                'rank': Trank
+            },
+            'actionCount': actionCounter,
+            'whiteMove': whiteMove
         }
-    }
+    else:
+        action_to_send = {
+            'actionType': 'ATTACK_ATTEMPT',
+            'isAIGame': True,
+            'activePiece': {
+                'pos': Apos,
+                'color': Acolor,
+                'rank': Arank
+            },
+            'targetPiece': {
+                'pos': Tpos,
+                'color': Tcolor,
+                'rank': Trank
+            },
+            'actionCount': actionCounter,
+            'whiteMove': whiteMove
+        }
 
-    print(json_to_return)
-    print('Recommended move: ' + move_to_send)
-    #return move_to_send
-
-#locally testing, will be removed
-produceMove(dict_test_board_state_2)
+    return action_to_send

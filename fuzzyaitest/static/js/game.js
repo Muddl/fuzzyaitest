@@ -126,6 +126,12 @@ const onDrop = (source, target, piece, newPos, oldPos) => {
     };
 }
 
+const onSnapEnd = () => {
+    setTimeout(() => {
+        board.position(local_boardstate, false);
+    }, 500);
+};
+
 // Configure for AI Game funcs
 var config = {
     draggable: true,
@@ -133,6 +139,7 @@ var config = {
     position: 'start',
     onDrop: onDrop,
     onDragStart: onDragStart,
+    onSnapEnd: onSnapEnd,
     pieceTheme: '/static/chessboard/{piece}.png',
 };
 
@@ -160,7 +167,8 @@ var local_whiteMove = null;
 var local_actionCount = null;
 var local_white_captured = null;
 var local_black_captured = null;
-var local_ai_action = null;
+var local_ai_action_list = null;
+var local_ai_move_list = null;
 
 const renderPieceListAnim = (white_captured, black_captured) => {
     let eliminatedPiece = $defending_piece.attr("src");
@@ -312,7 +320,7 @@ const resolveAttack = (data) => {
 
 const startAITurn = () => {
     const requestAIJSON = JSON.stringify({
-        'actionType': 'AI_ACTION_REQ',
+        'actionType': 'AI_TURN_REQ',
         'isAIGame': local_isAIGame,
         'actionCount': local_actionCount,
         'whiteMove': local_whiteMove
@@ -403,9 +411,11 @@ socket.onmessage = (message) => {
         data.highlight_pos.forEach(pos => greySquare(pos));
     }
     // On AI_ACTION_REQ actionType
-    else if(data.actionType=="AI_ACTION_REQ") {
-        local_ai_action = JSON.stringify(data.actionString)
-        socket.send(local_ai_action);
+    else if(data.actionType=="AI_TURN_REQ") {
+        local_ai_action_list = data.black_actions;
+        local_ai_move_list = data.black_moves;
+        console.log(local_ai_action_list);
+        console.log(local_ai_move_list);
     }
 };
 
