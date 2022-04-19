@@ -18,35 +18,6 @@ INITIAL_BOARDSTATE = {
     "a1": "wR", "b1": "wN", "c1": "wB", "d1": "wQ", "e1": "wK", "f1": "wB", "g1": "wN", "h1": "wR",
 }
 
-# Enums
-class Color(Enum):
-    WHITE = "w"
-    BLACK = "b"
-
-class Rank(Enum):
-    KING ="K"
-    QUEEN = "Q"
-    KNIGHT = "N"
-    ROOK = "R"
-    BISHOP = "B"
-    PAWN = "P"
-    
-class Corp(Enum):
-    KING = "K"
-    LEFT_BISHOP = "LB"
-    RIGHT_BISHOP = "RB"
-    LEADER = "L"
-
-class WinFlag(Enum): # 0 for no kings captured, 1 for white king captured, 2 for black king captured
-    NONE = 0
-    WHITE = 1
-    BLACK = 2
-
-class ActionType(Enum):
-    MOVEMENT = "MOVEMENT"
-    ATTACK_ATTEMPT = "ATTACK_ATTEMPT"
-    HIGHLIGHT = "HIGHLIGHT"
-
 # Classes
 
 class Piece:
@@ -68,31 +39,23 @@ class Piece:
     def getPos(self):
         return self.pos
     
+    def getTraits(self):
+        return f"color:{self.color},rank:{self.rank},corp:{self.corp},pos:{self.pos}"
+    
     def __eq__(self, other):
         if isinstance(other, Piece):
-            return self.getPair() == other.getPair()
-        
-class Corp:
-    def __init__(self, leader_piece, under_command):
-        self.leader = leader_piece
-        self.under_command = under_command
-    
-    def getLeader(self):
-        return self.leader
-    
-    def getUnderCommand(self):
-        return self.under_command
+            return self.getTraits() == other.getTraits()
 
 class Boardstate:
     # Initializes an empty board and game in code (not gui)
-    def __init__(self, boardstate: Dict[str, str], whiteMove: bool, corpList: str):
+    def __init__(self, boardstate: Dict[str, str], whiteMove: bool, corpList):
         # Game board from white's perspective
         # NOTE - I've seen this done with just strings, numbers, etc.
         # All are probably more efficient but a pain to read and work with
         
         self.board = boardstate # Board representation in Position Obj notation
         
-        self.corpList = self.parseCorpList(corpList)  # Contains the current state of corps & available actions for each
+        self.corpLists = self.parseCorpList(corpList)  # Contains the current state of corps & available actions for each
         
         self.attackDict = {
             "K": {"K": 4, "Q": 4, "N": 4, "B": 4, "R": 5, "P": 1},
@@ -105,44 +68,76 @@ class Boardstate:
         
         self.whiteMove = whiteMove  # Keeps track of whose turn it is
         
-        self.kingDead = WinFlag(0) # Initially no kings dead  
+        self.kingDead = 0 # Initially no kings dead  
         self.knightsAttacked = []  # Stores the position of knights that have attempted an attack already
         self.blitzableKnightSquares = []  # Stores the possible squares a knight could blitz from.
         self.gameHistory = []  # Keeps a history of the actions in a game.
     
     def parseCorpList(self, corpList):
-        output_corp_list = []
+        white_corp_list = {}
+        black_corp_list = {}
         
-        dict_corp_list = eval(corpList)
+        dict_corp_list = corpList
         
-        if (dict_corp_list.has_key("leftBishopCorp")):
-            dict_corp_list["leftBishopCorp"]["leader"] = Piece(Color(dict_corp_list["leftBishopCorp"]["leader"]["color"]), Rank(dict_corp_list["leftBishopCorp"]["leader"]["rank"]), dict_corp_list["leftBishopCorp"]["leader"]["pos"], Corp(dict_corp_list["leftBishopCorp"]["leader"]["corp"]))
-            new_under_command = []
-            for piece in dict_corp_list["leftBishopCorp"]["under_command"]:
-                formatted_piece = Piece(Color(piece["color"]), Rank(piece["rank"]), piece["pos"], Corp(piece["corp"]))
-                new_under_command.append(formatted_piece)
-            dict_corp_list["leftBishopCorp"]["under_command"] = new_under_command
-            output_corp_list.append(dict_corp_list["leftBishopCorp"])
-            
-        if (dict_corp_list.has_key("rightBishopCorp")):
-            dict_corp_list["rightBishopCorp"]["leader"] = Piece(Color(dict_corp_list["rightBishopCorp"]["leader"]["color"]), Rank(dict_corp_list["rightBishopCorp"]["leader"]["rank"]), dict_corp_list["rightBishopCorp"]["leader"]["pos"], Corp(dict_corp_list["rightBishopCorp"]["leader"]["corp"]))
-            new_under_command = []
-            for piece in dict_corp_list["rightBishopCorp"]["under_command"]:
-                formatted_piece = Piece(Color(piece["color"]), Rank(piece["rank"]), piece["pos"], Corp(piece["corp"]))
-                new_under_command.append(formatted_piece)
-            dict_corp_list["rightBishopCorp"]["under_command"] = new_under_command
-            output_corp_list.append(dict_corp_list["rightBishopCorp"])
-            
-        if (dict_corp_list.has_key("kingCorp")):
-            dict_corp_list["kingCorp"]["leader"] = Piece(Color(dict_corp_list["kingCorp"]["leader"]["color"]), Rank(dict_corp_list["kingCorp"]["leader"]["rank"]), dict_corp_list["kingCorp"]["leader"]["pos"], Corp(dict_corp_list["kingCorp"]["leader"]["corp"]))
-            new_under_command = []
-            for piece in dict_corp_list["kingCorp"]["under_command"]:
-                formatted_piece = Piece(Color(piece["color"]), Rank(piece["rank"]), piece["pos"], Corp(piece["corp"]))
-                new_under_command.append(formatted_piece)
-            dict_corp_list["kingCorp"]["under_command"] = new_under_command
-            output_corp_list.append(dict_corp_list["kingCorp"])
+        if ("whiteCorps" in dict_corp_list):
+            if ("leftBishopCorp" in dict_corp_list["whiteCorps"]):
+                dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"] = Piece(dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"]["color"], dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"]["rank"], dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"]["pos"], dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"]["corp"])
+                new_under_command = []
+                for piece in dict_corp_list["whiteCorps"]["leftBishopCorp"]["under_command"]:
+                    formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
+                    new_under_command.append(formatted_piece)
+                dict_corp_list["whiteCorps"]["leftBishopCorp"]["under_command"] = new_under_command
+                white_corp_list["leftBishopCorp"] = dict_corp_list["whiteCorps"]["leftBishopCorp"]
+                
+            if ("rightBishopCorp" in dict_corp_list["whiteCorps"]):
+                dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"] = Piece(dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"]["color"], dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"]["rank"], dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"]["pos"], dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"]["corp"])
+                new_under_command = []
+                for piece in dict_corp_list["whiteCorps"]["rightBishopCorp"]["under_command"]:
+                    formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
+                    new_under_command.append(formatted_piece)
+                dict_corp_list["whiteCorps"]["rightBishopCorp"]["under_command"] = new_under_command
+                white_corp_list["rightBishopCorp"] = dict_corp_list["whiteCorps"]["rightBishopCorp"]
+                
+            if ("kingCorp" in dict_corp_list["whiteCorps"]):
+                dict_corp_list["whiteCorps"]["kingCorp"]["leader"] = Piece(dict_corp_list["whiteCorps"]["kingCorp"]["leader"]["color"], dict_corp_list["whiteCorps"]["kingCorp"]["leader"]["rank"], dict_corp_list["whiteCorps"]["kingCorp"]["leader"]["pos"], dict_corp_list["whiteCorps"]["kingCorp"]["leader"]["corp"])
+                new_under_command = []
+                for piece in dict_corp_list["whiteCorps"]["kingCorp"]["under_command"]:
+                    formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
+                    new_under_command.append(formatted_piece)
+                dict_corp_list["whiteCorps"]["kingCorp"]["under_command"] = new_under_command
+                white_corp_list["kingCorp"] = dict_corp_list["whiteCorps"]["kingCorp"]
         
-        return output_corp_list
+        if ("blackCorps" in dict_corp_list):
+            if ("leftBishopCorp" in dict_corp_list["blackCorps"]):
+                dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"] = Piece(dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"]["color"], dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"]["rank"], dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"]["pos"], dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"]["corp"])
+                new_under_command = []
+                for piece in dict_corp_list["blackCorps"]["leftBishopCorp"]["under_command"]:
+                    formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
+                    new_under_command.append(formatted_piece)
+                dict_corp_list["blackCorps"]["leftBishopCorp"]["under_command"] = new_under_command
+                black_corp_list["leftBishopCorp"] = dict_corp_list["blackCorps"]["leftBishopCorp"]
+                
+            if ("rightBishopCorp" in dict_corp_list["blackCorps"]):
+                dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"] = Piece(dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"]["color"], dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"]["rank"], dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"]["pos"], dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"]["corp"])
+                new_under_command = []
+                for piece in dict_corp_list["blackCorps"]["rightBishopCorp"]["under_command"]:
+                    formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
+                    new_under_command.append(formatted_piece)
+                dict_corp_list["blackCorps"]["rightBishopCorp"]["under_command"] = new_under_command
+                black_corp_list["rightBishopCorp"] = dict_corp_list["blackCorps"]["rightBishopCorp"]
+                
+            if ("kingCorp" in dict_corp_list["blackCorps"]):
+                dict_corp_list["blackCorps"]["kingCorp"]["leader"] = Piece(dict_corp_list["blackCorps"]["kingCorp"]["leader"]["color"], dict_corp_list["blackCorps"]["kingCorp"]["leader"]["rank"], dict_corp_list["blackCorps"]["kingCorp"]["leader"]["pos"], dict_corp_list["blackCorps"]["kingCorp"]["leader"]["corp"])
+                new_under_command = []
+                for piece in dict_corp_list["blackCorps"]["kingCorp"]["under_command"]:
+                    formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
+                    new_under_command.append(formatted_piece)
+                dict_corp_list["blackCorps"]["kingCorp"]["under_command"] = new_under_command
+                black_corp_list["kingCorp"] = dict_corp_list["blackCorps"]["kingCorp"]
+        
+        output_corps = {"w": white_corp_list, "b": black_corp_list}
+        
+        return output_corps
     
     # Function that moves the pieces, adds it to the game history, and swaps players - IMPORTANT
     def processAction(self, parsedAction):
@@ -154,7 +149,7 @@ class Boardstate:
             targetPos = parsedAction["targetPiece"]["pos"]
             targetRank = parsedAction["targetPiece"]["rank"]
             
-            (empt_spaces, enem_spaces) = self.getValidMoveset(Piece(activeColor, activeRank, activePos))
+            (in_range, setup, movement) = self.getValidMoveset(Piece(activeColor, activeRank, activePos))
             
             if activePos in self.board: # Selected tile must contain a piece on the board
                 if targetPos in empt_spaces:  # If the square is in the piece's empty_squares set
@@ -259,9 +254,9 @@ class Boardstate:
             case 'R':
                 return self.getRookValidMoveset(selected)
             case 'K':
-                return self.getValidRoyalMoveset(selected)
+                return self.getValidKingMoveset(selected)
             case 'Q':
-                return self.getValidRoyalMoveset(selected)
+                return self.getValidQueenMoveset(selected)
             case 'N':
                 return self.getValidKnightMoveset(selected)
             case _:
@@ -272,7 +267,8 @@ class Boardstate:
         selectedColor = selected.getColor()
         selectedRank = selected.getRank()
         selectedPos = selected.getPos()
-        selectedCommand = selected.getCommand()
+        selectedCorp = selected.getCorp()
+        friendly = 'w' if self.whiteMove else 'b'
         
         in_range = []
         setup = []
@@ -280,58 +276,63 @@ class Boardstate:
         
         base_list = getAdjSquares(selectedPos, True) # Base surrounding adjacent squares for current pawn position
         
-        if selectedRank == "P" and self.actionCounter < 3: # Confirm we've been passed a pawn & actions remain
+        if selectedRank == "P" and (selected in self.corpLists[friendly][selectedCorp]["under_command"]) and self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Confirm we've been passed a pawn in the correct corp & actions remain
             if (self.whiteMove and selectedColor == "w"): # Relative forward movement to white play
                 for position in base_list:
                     if int(position[1]) > int(selectedPos[1]): # If space is relatively forward
                         if (not (position in self.board)): # If empty
-                            empty_spaces.append(position)
+                            movement.append(position)
                         elif (self.board.get(position)[0] == "b"): # If enemy
-                            enemy_spaces.append(position)
+                            in_range.append(position)
             elif ((not self.whiteMove) and selectedColor == "b"): # Relative forward movement to black play
                 for position in base_list:
                     if int(position[1]) < int(selectedPos[1]): # If space is relatively forward
                         if (not (position in self.board)): # If empty
-                            empty_spaces.append(position)
+                            movement.append(position)
                         elif (self.board.get(position)[0] == "w"): # If enemy
-                            enemy_spaces.append(position)
+                            in_range.append(position)
         
-        return (empty_spaces, enemy_spaces)
+        return (in_range, setup, movement)
     
     def getBishopValidMoveset(self, selected):
         selectedColor = selected.getColor()
         selectedRank = selected.getRank()
         selectedPos = selected.getPos()
+        selectedCorp = selected.getCorp()
+        friendly = 'w' if self.whiteMove else 'b'
         enemy = 'b' if self.whiteMove else 'w'
+        
+        in_range = []
+        setup = []
+        movement = []
+        
+        base_list = getAdjSquares(selectedPos, True) # Base surrounding adjacent squares for current pawn position
 
-        base_list = getAdjSquares(selectedPos, True)
-        empty_spaces = []
-        enemy_spaces = []
+        if selectedRank == 'B' and (selected == self.corpLists[friendly][selectedCorp]["leader"]): # Confirm piece is a bishop & the leader of its corp
+            if self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Attacks/Captures/Full Movement
+                
+            else: # Commander's Movement
+                for pos in base_list:
+                    if pos not in self.board:
+                        movement.append(pos)
 
-        if selectedRank == 'B' and self.actionCounter < 3:
-            if selectedColor != enemy:
-                for position in base_list:
-                    sublist = getAdjSquares(position, True)
-                    for subpos in sublist:
-                        if subpos not in self.board:
-                            if subpos not in empty_spaces:
-                                empty_spaces.append(subpos)
-                        elif self.board.get(subpos)[0] == enemy:
-                            enemy_spaces.append(subpos)
-
-        return (empty_spaces, enemy_spaces)
+        return (in_range, setup, movement)
     
     def getRookValidMoveset(self, selected):
         selectedColor = selected.getColor()
         selectedRank = selected.getRank()
         selectedPos = selected.getPos()
+        selectedCorp = selected.getCorp()
+        friendly = 'w' if self.whiteMove else 'b'
         enemy = 'b' if self.whiteMove else 'w'
+        
+        in_range = []
+        setup = []
+        movement = []
+        
+        base_list = getAdjSquares(selectedPos, True) # Base surrounding adjacent squares for current pawn position
 
-        base_list = getAdjSquares(selectedPos, True)
-        empty_spaces = []
-        enemy_spaces = []
-
-        if selectedRank == 'R' and self.actionCounter < 3:
+        if selectedRank == 'R' and (selected in self.corpList[friendly][selectedCorp]["under_command"]) and self.corpList[friendly][selectedCorp]["command_authority_remaining"] == 1:
             if selectedColor != enemy:
                 # Movement
                 for position in base_list:
@@ -514,20 +515,20 @@ def getDirection(startPos, endPos):
     return direction
 
 
-def getLine(board, empty_spaces, selectedPos, targetPos):
+def getLine(board, movement, selectedPos, targetPos):
     # Calculates the squares outside of adjacency for bishops and rooks (can move 2 in any direction in a line)
     match getDirection(selectedPos, targetPos):
         case 1:  # Directly North
             for row in range(int(selectedPos[1]), int(targetPos[1])):
                 current_pos = selectedPos[0] + str(row)
                 if current_pos not in board:
-                    empty_spaces.append(current_pos)
+                    movement.append(current_pos)
 
         case -1:  # Directly South
             for row in range(int(targetPos[1]), int(selectedPos[1])):
                 current_pos = selectedPos[0] + str(row)
                 if current_pos not in board:
-                    empty_spaces.append(current_pos)
+                    movement.append(current_pos)
 
         case 10:  # Directly East
             norm_selectedPos = ord(selectedPos[0]) - ord("a")
@@ -536,7 +537,7 @@ def getLine(board, empty_spaces, selectedPos, targetPos):
             for col in range(norm_selectedPos, norm_selectedPos + distance):
                 current_pos = chr(col + ord("a")) + selectedPos[1]
                 if current_pos not in board:
-                    empty_spaces.append(current_pos)
+                    movement.append(current_pos)
 
         case -10:  # Directly West
             norm_selectedPos = ord(selectedPos[0]) - ord("a")
@@ -545,41 +546,41 @@ def getLine(board, empty_spaces, selectedPos, targetPos):
             for col in range(norm_targetPos, norm_targetPos + distance):
                 current_pos = chr(col + ord("a")) + selectedPos[1]
                 if current_pos not in board:
-                    empty_spaces.append(current_pos)
+                    movement.append(current_pos)
 
-        case 11:  # North + West
-            norm_selectedCol = ord(selectedPos[0]) - ord("a")
-            diagDistance = int(targetPos[1]) - int(selectedPos[1])
-            for current_offset in range(1, diagDistance):
-                current_pos = str(chr(norm_selectedCol - current_offset + ord("a")) + str(int(selectedPos[1] + current_offset)))
-                if current_pos not in board:
-                    empty_spaces.append(current_pos)
-
-        case -9:  # South + West
-            norm_selectedCol = ord(selectedPos[0]) - ord("a")
-            diagDistance = int(targetPos[1]) - int(selectedPos[1])
-            for current_offset in range(1, diagDistance):
-                current_pos = str(chr(norm_selectedCol - current_offset + ord("a")) + str(int(selectedPos[1] - current_offset)))
-                if current_pos not in board:
-                    empty_spaces.append(current_pos)
-
-        case 9:  # North + East
+        case 11:  # North + East
             norm_selectedCol = ord(selectedPos[0]) - ord("a")
             diagDistance = int(targetPos[1]) - int(selectedPos[1])
             for current_offset in range(1, diagDistance):
                 current_pos = str(chr(norm_selectedCol + current_offset + ord("a")) + str(int(selectedPos[1] + current_offset)))
                 if current_pos not in board:
-                    empty_spaces.append(current_pos)
+                    movement.append(current_pos)
 
-        case -11:  # South + East
+        case -9:  # North + West
             norm_selectedCol = ord(selectedPos[0]) - ord("a")
             diagDistance = int(targetPos[1]) - int(selectedPos[1])
             for current_offset in range(1, diagDistance):
                 current_pos = str(chr(norm_selectedCol + current_offset + ord("a")) + str(int(selectedPos[1] - current_offset)))
                 if current_pos not in board:
-                    empty_spaces.append(current_pos)
+                    movement.append(current_pos)
 
-    return empty_spaces
+        case 9:  # South + East
+            norm_selectedCol = ord(selectedPos[0]) - ord("a")
+            diagDistance = int(targetPos[1]) - int(selectedPos[1])
+            for current_offset in range(1, diagDistance):
+                current_pos = str(chr(norm_selectedCol - current_offset + ord("a")) + str(int(selectedPos[1] + current_offset)))
+                if current_pos not in board:
+                    movement.append(current_pos)
+
+        case -11:  # South + West
+            norm_selectedCol = ord(selectedPos[0]) - ord("a")
+            diagDistance = int(targetPos[1]) - int(selectedPos[1])
+            for current_offset in range(1, diagDistance):
+                current_pos = str(chr(norm_selectedCol - current_offset + ord("a")) + str(int(selectedPos[1] - current_offset)))
+                if current_pos not in board:
+                    movement.append(current_pos)
+
+    return movement
 
 def newboard():
     return INITIAL_BOARDSTATE

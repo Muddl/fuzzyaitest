@@ -1,148 +1,41 @@
 {
-    "getValidMovesetTests": [
-        {
-            "label": "pawnUnblockedTest",
-            "selectedPiece": {
-                "pos": "d4",
-                "color": "w",
-                "rank": "P"
-            },
-            "boardstate": {
-                "d4": "wP"
-            }
-        },
-        {
-            "label": "pawnBlockedTest",
-            "selectedPiece": {
-                "pos": "d4",
-                "color": "w",
-                "rank": "P"
-            },
-            "boardstate": {
-                "d4": "wP",
-                "c5": "wP",
-                "e5": "bP"
-            }
-        }
-    ],
     "pawnTests": [
         {
-            "label": "pawnMovement",
-            "action": {
-                "actionType": "MOVEMENT",
-                "activePiece": {
-                    "pos": "d4",
-                    "color": "w",
-                    "rank": "P"
-                },
-                "targetPiece": {
-                    "pos": "d5",
-                    "color": "w",
-                    "rank": "P"
-                }
-            },
-            "boardstate": {
-                "d4": "wP"
+            "label": "getPawnValidMoveset-WhiteFullBoard",
+            "piece": {
+                "color": "w",
+                "rank": "P",
+                "pos": "d2",
+                "corp": "kingCorp"
             }
         },
         {
-            "label": "pawnAttack",
-            "action": {
-                "actionType": "ATTACK_ATTEMPT",
-                "activePiece": {
-                    "pos": "d4",
-                    "color": "w",
-                    "rank": "P"
-                },
-                "targetPiece": {
-                    "pos": "d5",
-                    "color": "b",
-                    "rank": "P"
-                },
-                "blitz": false
-            },
-            "boardstate": {
-                "d4": "wP",
-                "d5": "bP"
-            }
-        },
-        {
-            "label": "pawnAttackFromSide",
-            "action": {
-                "actionType": "ATTACK_ATTEMPT",
-                "activePiece": {
-                    "pos": "a4",
-                    "color": "w",
-                    "rank": "P"
-                },
-                "targetPiece": {
-                    "pos": "a5",
-                    "color": "b",
-                    "rank": "P"
-                },
-                "blitz": false
-            },
-            "boardstate": {
-                "a4": "wP",
-                "a5": "bP"
-            }
-        },
-        {
-            "label": "pawnAttackFromCorner",
-            "action": {
-                "actionType": "ATTACK_ATTEMPT",
-                "activePiece": {
-                    "pos": "a1",
-                    "color": "w",
-                    "rank": "P"
-                },
-                "targetPiece": {
-                    "pos": "a2",
-                    "color": "b",
-                    "rank": "P"
-                },
-                "blitz": false
-            },
-            "boardstate": {
-                "a1": "wP",
-                "a2": "bP"
+            "label": "getPawnValidMoveset-BlackFullBoard",
+            "piece": {
+                "color": "b",
+                "rank": "P",
+                "pos": "d7",
+                "corp": "kingCorp"
             }
         }
     ],
     "bishopTests": [
         {
-            "label": "bishopMovementNoEnem",
-            "action": {
-                "actionType": "MOVEMENT",
-                "activePiece": {
-                    "color": "w",
-                    "rank": "B",
-                    "pos": "d4"
-                }
-            },
-            "boardstate": {
-                "d4": "wB"
+            "label": "getBishopValidMoveset-WhiteFullBoard",
+            "piece": {
+                "color": "w",
+                "rank": "B",
+                "pos": "c1",
+                "corp": "kingCorp"
             }
         },
         {
-            "label": "bishopAttack",
-            "action": {
-                "actionType": "ATTACK_ATTEMPT",
-                "activePiece": {
-                    "pos": "d4",
-                    "color": "w",
-                    "rank": "B"
-                },
-                "targetPiece": {
-                    "pos": "d6",
-                    "color": "b",
-                    "rank": "P"
-                },
-                "blitz": false
-            },
-            "boardstate": {
-                "d4": "wB",
-                "d6": "bP"
+            "label": "getBishopValidMoveset-BlackFullBoard",
+            "piece": {
+                "color": "b",
+                "rank": "B",
+                "pos": "f8",
+                "corp": "kingCorp"
             }
         }
     ],
