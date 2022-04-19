@@ -389,8 +389,9 @@ class Boardstate:
                     curPiece = self.board.pop(activePos)  # Sets the square that the piece is on to empty (the piece is "lifted" from the table)
                     self.board[targetPos] = curPiece  # "Places" the piece onto that square
                     
-                    # Cleanup
-                    # self.corpLists[friendly][]
+                    # Corp Cleanup
+                    self.corpLists[friendly][activeCorp]["command_authority_remaining"] = 0
+                    
 
                     if (activeRank == "N"): # Add knight to moved
                         self.knightsAttacked.append(targetPos)
