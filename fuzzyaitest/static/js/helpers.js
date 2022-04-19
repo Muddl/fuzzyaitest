@@ -33,10 +33,38 @@ export const haveSameData = (obj1, obj2) => {
     return false;
 };
 
-export const removeGreySquares = () => {
+export const removeHighlightedSquares = () => {
     $('#my_board .square-55d63').css('background', '')
 };
-  
+
+export const redSquare = (square) => {
+    const whiteSquareRed = '#e54242';
+    const blackSquareRed = '#bf0f0f';  
+
+    var $square = $('#my_board .square-' + square)
+
+    var bg = whiteSquareRed;
+    if ($square.hasClass('black-3c85d')) {
+        bg = blackSquareRed;
+    }
+
+    $square.css('background', bg)
+};
+
+export const greenSquare = (square) => {
+    const whiteSquareGreen = '#4fdd39';
+    const blackSquareGreen = '#27b211';  
+
+    var $square = $('#my_board .square-' + square)
+
+    var bg = whiteSquareGreen;
+    if ($square.hasClass('black-3c85d')) {
+        bg = blackSquareGreen;
+    }
+
+    $square.css('background', bg)
+};
+
 export const greySquare = (square) => {
     const whiteSquareGrey = '#a9a9a9';
     const blackSquareGrey = '#696969';  

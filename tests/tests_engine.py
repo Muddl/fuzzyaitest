@@ -1,6 +1,6 @@
 from django.test import SimpleTestCase, tag
 from game.engine import *
-import json, os, time
+import json, os
 
 # Constants
 INITIAL_BOARDSTATE = {
@@ -64,23 +64,6 @@ class ActionTestCase(SimpleTestCase):
             
 @tag('core', 'helpers')
 class HelperTestCase(SimpleTestCase):
-    @tag('getLine')
-    def testGetLineFunc(self):
-        module_dir = os.path.dirname(__file__)
-        data_path = os.path.join(module_dir, 'mockups/sample_boardstates.json')
-        with open(data_path, 'r') as f:
-            test_cases = json.load(f)["getLineTests"]
-            for test in test_cases:
-                match test["label"]:
-                    case "N":
-                        self.assertCountEqual(getLine(test["boardstate"], [], test["selectedPos"], test["targetPos"]), ["d5"])
-                    case "S":
-                        self.assertCountEqual(getLine(test["boardstate"], [], test["selectedPos"], test["targetPos"]), ["d3"])
-                    case "E":
-                        self.assertCountEqual(getLine(test["boardstate"], [], test["selectedPos"], test["targetPos"]), ["e4"])
-                    case "W":
-                        self.assertCountEqual(getLine(test["boardstate"], [], test["selectedPos"], test["targetPos"]), ["c4"])
-    
     @tag('getDirection')
     def testGetDirectionFunc(self):
         module_dir = os.path.dirname(__file__)
@@ -156,75 +139,21 @@ class BoardstateTestCase(SimpleTestCase):
         test_cases = boardstate_payload["bishopTests"]
         for test in test_cases:
             match test["label"]:
-                case "getBishopValidMoveset-WhiteFullBoard":
-                    current = Boardstate(INITIAL_BOARDSTATE, True, corp_payload)
-                    test_bishop = Piece(test["piece"]["color"], test["piece"]["rank"], test["piece"]["pos"], test["piece"]["corp"])
-                    (test_in_range, test_setup, test_movement) = current.getValidMoveset(test_bishop)
-                    self.assertEqual(test_in_range, [])
-                    self.assertEqual(test_setup, [])
-                    self.assertCountEqual(test_movement, [])
-                
-                # case "getBishopValidMoveset-BlackFullBoard":
-                #     current = Boardstate(INITIAL_BOARDSTATE, False, corp_payload)
+                # case "getBishopValidMoveset-WhiteFullBoard":
+                #     current = Boardstate(INITIAL_BOARDSTATE, True, corp_payload)
                 #     test_bishop = Piece(test["piece"]["color"], test["piece"]["rank"], test["piece"]["pos"], test["piece"]["corp"])
                 #     (test_in_range, test_setup, test_movement) = current.getValidMoveset(test_bishop)
                 #     self.assertEqual(test_in_range, [])
                 #     self.assertEqual(test_setup, [])
                 #     self.assertCountEqual(test_movement, [])
+                
+                case "getBishopValidMoveset-BlackFullBoard":
+                    current = Boardstate(INITIAL_BOARDSTATE, False, corp_payload)
+                    test_bishop = Piece(test["piece"]["color"], test["piece"]["rank"], test["piece"]["pos"], test["piece"]["corp"])
+                    (test_in_range, test_setup, test_movement) = current.getValidMoveset(test_bishop)
+                    self.assertEqual(test_in_range, [])
+                    self.assertEqual(test_setup, [])
+                    self.assertCountEqual(test_movement, [])
         
         boardstate_file.close()
-        corp_file.close() 
-    
-    @tag('moveset', 'rook')
-    def testGetValidRookMoveset(self):
-        module_dir = os.path.dirname(__file__)
-        data_path = os.path.join(module_dir, 'mockups/sample_boardstates.json')
-        with open(data_path, 'r') as f:
-            payload = json.load(f)
-            test = payload["rookTests"][0]
-            current = Boardstate(eval(str(test["boardstate"])), True, 0)
-            selectedPiece = Piece(test["action"]["activePiece"]["color"], test["action"]["activePiece"]["rank"], test["action"]["activePiece"]["pos"])
-            (empt_space, enem_space) = current.getValidMoveset(selectedPiece)
-            self.assertCountEqual(empt_space, ["b2", "b3", "b4", "b5", "b6", "c2", "c3", "c4", "c5", "c6", "d2", "d3", "d5", "d6", "e2", "e3", "e4", "e5", "e6", "f2", "f3", "f4", "f5", "f6"])
-            self.assertEqual(enem_space, [])
-    
-    @tag('moveset', 'royal')
-    def testGetValidRoyalMoveset(self):
-        self.maxDiff = None # For long dict comparison printouts
-        module_dir = os.path.dirname(__file__)
-        data_path = os.path.join(module_dir, 'mockups/sample_boardstates.json')
-        with open(data_path, 'r') as f:
-            payload = json.load(f)
-            test_cases = payload["royalTests"]
-            for test in test_cases:
-                match test["label"]:
-                    case "kingMovementNoEnem":
-                        current = Boardstate(eval(str(test["boardstate"])), True, 0)
-                        selectedPiece = Piece(test["action"]["activePiece"]["color"], test["action"]["activePiece"]["rank"], test["action"]["activePiece"]["pos"])
-                        (empt_space, enem_space) = current.getValidMoveset(selectedPiece)
-                        self.assertCountEqual(empt_space, ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "d1", "d2", "d3", "d5", "d6", "d7", "e1", "e2", "e3", "e4", "e5", "e6", "e7", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "g1", "g2", "g3", "g4", "g5", "g6", "g7"])
-                        self.assertEqual(enem_space, [])
-                    case "queenMovementNoEnem":
-                        current = Boardstate(eval(str(test["boardstate"])), True, 0)
-                        selectedPiece = Piece(test["action"]["activePiece"]["color"], test["action"]["activePiece"]["rank"], test["action"]["activePiece"]["pos"])
-                        (empt_space, enem_space) = current.getValidMoveset(selectedPiece)
-                        self.assertCountEqual(empt_space, ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "d1", "d2", "d3", "d5", "d6", "d7", "e1", "e2", "e3", "e4", "e5", "e6", "e7", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "g1", "g2", "g3", "g4", "g5", "g6", "g7"])
-                        self.assertEqual(enem_space, [])
-
-    @tag('moveset', 'knight')
-    def testGetValidRoyalMoveset(self):
-        self.maxDiff = None # For long dict comparison printouts
-        module_dir = os.path.dirname(__file__)
-        data_path = os.path.join(module_dir, 'mockups/sample_boardstates.json')
-        with open(data_path, 'r') as f:
-            payload = json.load(f)
-            test_cases = payload["knightTests"]
-            for test in test_cases:
-                match test["label"]:
-                    case "knightMovementNoEnem":
-                        current = Boardstate(eval(str(test["boardstate"])), True, 0)
-                        selectedPiece = Piece(test["action"]["activePiece"]["color"], test["action"]["activePiece"]["rank"], test["action"]["activePiece"]["pos"])
-                        (empt_space, enem_space) = current.getValidMoveset(selectedPiece)
-                        self.assertCountEqual(empt_space, ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "d1", "d2", "d3", "d5", "d6", "d7", "d8", "e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8", "h1", "h2", "h3", "h4", "h5", "h6", "h7", "h8"])
-                        self.assertEqual(enem_space, [])
-    
+        corp_file.close()

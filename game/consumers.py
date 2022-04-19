@@ -45,7 +45,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 "boardstate": data[1],
                 "level": data[2],
                 "whiteMove": data[3],
-                "actionCount": data[4],
+                "corplist": data[4],
                 "white_captured": data[5],
                 "black_captured": data[6]
             })
@@ -70,7 +70,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         
             game.save()
             
-            return [True, game.boardstate, game.level, game.whitemove, game.actioncount, game.white_captured, game.black_captured]
+            return [True, game.boardstate, game.level, game.whitemove, game.corplist, game.white_captured, game.black_captured]
     
     async def receive_json(self, content):
         # Grab actionType & isAIGame
@@ -91,11 +91,11 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     
      # Helper function called when a new-move command is recieved, broadcasts move.new event to group, handled in move_new
     async def new_move(self, payload):
-        boardstate, whiteMove, actionCounter = await self.get_boardstate()
+        boardstate, whiteMove, corpList = await self.get_boardstate()
         
-        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, actionCounter=actionCounter)
+        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList)
         
-        isValidAction, new_boardstate, actionCount, whiteMove = board.processAction(payload)
+        isValidAction, new_boardstate, corpList, whiteMove = board.processAction(payload)
         
         if isValidAction:
             await self.channel_layer.group_send(
@@ -107,7 +107,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                     "targetPiece": payload["targetPiece"],
                     "new_boardstate": new_boardstate,
                     "whiteMove": whiteMove,
-                    "actionCount": actionCount,
+                    "corpList": corpList,
                     'sender_channel_name': self.channel_name
                 }
             )
@@ -123,13 +123,13 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             "targetPiece": event["targetPiece"],
             "new_boardstate": event["new_boardstate"],
             "whiteMove": event["whiteMove"],
-            "actionCount": event["actionCount"],
+            "corpList": event["corpList"],
             # "pgn": event["pgn"],
         })
         print(f"{event['sender_channel_name']}\t-\tSending New-Move")
         
         # Call update(baordstate, pgn) handler to manage DB persistence
-        await self.update(event["new_boardstate"], event["actionCount"], event["whiteMove"]) #,event["pgn"])
+        await self.update(event["new_boardstate"], event["corpList"], event["whiteMove"]) #,event["pgn"])
     
     # Helper function called when a new-move command is recieved, broadcasts move.new event to group, handled in move_new
     async def attack_attempt(self, payload):
@@ -276,11 +276,11 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         await self.update(event["new_boardstate"], event["actionCount"], event["whiteMove"]) #,event["pgn"])
         
     async def highlight(self, payload):
-        boardstate, whiteMove, actionCounter = await self.get_boardstate()
+        boardstate, whiteMove, corpList = await self.get_boardstate()
         
-        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, actionCounter=actionCounter)
+        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList)
         
-        isValidAction, highlight_pos = board.processAction(payload)
+        isValidAction, in_range, setup, movement = board.processAction(payload)
         
         if isValidAction:
             await self.channel_layer.group_send(
@@ -288,7 +288,9 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 {
                     "type": "move.highlight",
                     "actionType": "HIGHLIGHT",
-                    "highlight_pos": highlight_pos,
+                    "in_range": in_range,
+                    "setup": setup,
+                    "movement": movement,
                     'sender_channel_name': self.channel_name
                 }
             )
@@ -301,7 +303,9 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         if self.channel_name == event['sender_channel_name']:
             await self.send_json({
                 "actionType": event['actionType'],
-                "highlight_pos": event['highlight_pos']
+                "in_range": event['in_range'],
+                "setup": event["setup"],
+                "movement": event["movement"]
             })
             print(f"{event['sender_channel_name']}\t-\tSending Highlight-Move")
     
@@ -400,7 +404,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     
     # Called after every move_new & attempt_action JSON is sent to persist gamestate to DB
     @database_sync_to_async
-    def update(self, new_boardstate, actionCount, whiteMove): # , pgn):
+    def update(self, new_boardstate, corplist, whiteMove): # , pgn):
         # Find current game, toss update if doesn't exist for some reason
         game = Game.objects.all().filter(id=self.game_id)[0]
         if not game:
@@ -409,7 +413,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         
         # Replace existing boardstate & PGN with updated version
         game.boardstate = new_boardstate
-        game.actioncount = actionCount
+        game.corplist = corplist
         game.whitemove = whiteMove
         # game.pgn = pgn
         
@@ -422,4 +426,4 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def get_boardstate(self):
         game = Game.objects.all().filter(id=self.game_id)[0]
-        return game.boardstate, game.whitemove, game.actioncount
+        return game.boardstate, game.whitemove, game.corplist

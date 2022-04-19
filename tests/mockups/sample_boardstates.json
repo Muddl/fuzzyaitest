@@ -26,7 +26,7 @@
                 "color": "w",
                 "rank": "B",
                 "pos": "c1",
-                "corp": "kingCorp"
+                "corp": "leftBishopCorp"
             }
         },
         {
@@ -35,7 +35,7 @@
                 "color": "b",
                 "rank": "B",
                 "pos": "f8",
-                "corp": "kingCorp"
+                "corp": "rightBishopCorp"
             }
         }
     ],

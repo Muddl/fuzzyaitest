@@ -1,5 +1,4 @@
-import { removeGreySquares, greySquare, sortAlphabet } from './helpers.js';
-import { startPO } from './constants.js';
+import { removeHighlightedSquares, greySquare, redSquare, greenSquare, sortAlphabet } from './helpers.js';
 
 // Global Variables
 var game_id = window.location.pathname.substring(6,window.location.pathname.length); // Check the subtring params here
@@ -8,6 +7,159 @@ var ws_path = ws_scheme + '://' + window.location.host + "/game/" + game_id;
 console.log("Attempting connection on " + ws_path);
 var socket = new ReconnectingWebSocket(ws_path);
 console.log("Connected on " + ws_path);
+
+// JQuery Element References
+var $whiteCapturedCon = $('#white-captured-con');
+var $blackCapturedCon = $('#black-captured-con');
+var $move_log = $("#move_log");
+var $die = $("#die");
+var $attacking_piece = $("#attacking-piece");
+var $defending_piece = $("#defending-piece");
+var $opp_pieces = $("#white-captured-con");
+var $own_pieces = $("#black-captured-con");
+var $attack_result = $("#attack-result");
+var $modalTitle = $('#modal-title');
+var $modalBody = $('#modal-body');
+
+// Local Gamestate Var Holders
+var local_boardstate = null;
+var local_isAIGame = null;
+var local_level = null;
+var local_whiteMove = null;
+var local_corplist = null;
+var local_white_captured = null;
+var local_black_captured = null;
+var local_ai_action_list = null;
+var local_ai_move_list = null;
+
+const findCorpOfPiece = (source, piece) => {
+    const Apos = source;
+    const Acolor = piece.substring(0,1);
+    const Arank = piece.substring(1,2);
+    let Acorp = "";
+
+    if (Acolor == "w") {
+        switch (Arank) {
+            case "P":
+                Object.entries(local_corplist.whiteCorps).forEach((corpKey) => {
+                    corpKey[1].under_command.forEach((piece) => {
+                        if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
+                            Acorp = piece.corp;
+                        };
+                    });
+                });
+                console.log(Acorp);
+                break;
+            case "B":
+                Object.entries(local_corplist.whiteCorps).forEach((corpKey) => {
+                    if (corpKey[1].leader.pos == Apos && corpKey[1].leader.color == Acolor && corpKey[1].leader.rank == Arank) {
+                        Acorp = corpKey[1].leader.corp;
+                    };
+                });
+                console.log(Acorp);
+                break;
+            case "N":
+                Object.entries(local_corplist.whiteCorps).forEach((corpKey) => {
+                    corpKey[1].under_command.forEach((piece) => {
+                        if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
+                            Acorp = piece.corp;
+                        };
+                    });
+                });
+                console.log(Acorp);
+                break;
+            case "R":
+                Object.entries(local_corplist.whiteCorps).forEach((corpKey) => {
+                    corpKey[1].under_command.forEach((piece) => {
+                        if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
+                            Acorp = piece.corp;
+                        };
+                    });
+                });
+                console.log(Acorp);
+                break;
+            case "Q":
+                Object.entries(local_corplist.whiteCorps).forEach((corpKey) => {
+                    corpKey[1].under_command.forEach((piece) => {
+                        if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
+                            Acorp = piece.corp;
+                        };
+                    });
+                });
+                console.log(Acorp);
+                break;
+            case "K":
+                Object.entries(local_corplist.whiteCorps).forEach((corpKey) => {
+                    if (corpKey[1].leader.pos == Apos && corpKey[1].leader.color == Acolor && corpKey[1].leader.rank == Arank) {
+                        Acorp = corpKey[1].leader.corp;
+                    };
+                });
+                console.log(Acorp);
+                break;
+        };
+    } else {
+        switch (Arank) {
+            case "P":
+                Object.entries(local_corplist.blackCorps).forEach((corpKey) => {
+                    corpKey[1].under_command.forEach((piece) => {
+                        if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
+                            Acorp = piece.corp;
+                        };
+                    });
+                });
+                console.log(Acorp);
+                break;
+            case "B":
+                Object.entries(local_corplist.blackCorps).forEach((corpKey) => {
+                    if (corpKey[1].leader.pos == Apos && corpKey[1].leader.color == Acolor && corpKey[1].leader.rank == Arank) {
+                        Acorp = corpKey[1].leader.corp;
+                    };
+                });
+                console.log(Acorp);
+                break;
+            case "N":
+                Object.entries(local_corplist.blackCorps).forEach((corpKey) => {
+                    corpKey[1].under_command.forEach((piece) => {
+                        if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
+                            Acorp = piece.corp;
+                        };
+                    });
+                });
+                console.log(Acorp);
+                break;
+            case "R":
+                Object.entries(local_corplist.blackCorps).forEach((corpKey) => {
+                    corpKey[1].under_command.forEach((piece) => {
+                        if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
+                            Acorp = piece.corp;
+                        };
+                    });
+                });
+                console.log(Acorp);
+                break;
+            case "Q":
+                Object.entries(local_corplist.blackCorps).forEach((corpKey) => {
+                    corpKey[1].under_command.forEach((piece) => {
+                        if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
+                            Acorp = piece.corp;
+                        };
+                    });
+                });
+                console.log(Acorp);
+                break;
+            case "K":
+                Object.entries(local_corplist.blackCorps).forEach((corpKey) => {
+                    if (corpKey[1].leader.pos == Apos && corpKey[1].leader.color == Acolor && corpKey[1].leader.rank == Arank) {
+                        Acorp = corpKey[1].leader.corp;
+                    };
+                });
+                console.log(Acorp);
+                break;
+        };
+    };
+
+    return Acorp;
+};
 
 const attackOrMove = (oldPos, newPos) => {
     // The following code block diffs the boards locally so that a move/attack can be detected
@@ -45,21 +197,27 @@ const attackOrMove = (oldPos, newPos) => {
 
 // This triggers on a piece pickup & sends a highlight request to the backend
 const onDragStart = (source, piece) => {
+    const Apos = source;
+    const Acolor = piece.substring(0,1);
+    const Arank = piece.substring(1,2);
+    const Acorp = findCorpOfPiece(source, piece);
+
     const highlightJson = JSON.stringify({
         'actionType': 'HIGHLIGHT',
         'isAIGame': local_isAIGame,
         'activePiece': {
-            'pos': source,
-            'color': piece.substring(0,1),
-            'rank': piece.substring(1,2)
+            'pos': Apos,
+            'color': Acolor,
+            'rank': Arank,
+            'corp': Acorp
         }
     });
-    console.log(highlightJson);
+    
     socket.send(highlightJson);
 };
 
 const onDrop = (source, target, piece, newPos, oldPos) => {
-    removeGreySquares();
+    removeHighlightedSquares();
 
     // if ATTACK_ATTEMPT
     if (attackOrMove(oldPos, newPos)) {
@@ -67,11 +225,13 @@ const onDrop = (source, target, piece, newPos, oldPos) => {
         var Apos = source;
         var Acolor = String(piece).substring(0,1);
         var Arank = String(piece).substring(1,2);
+        var Acorp = findCorpOfPiece(source, piece);
         //targetPiece
         var Tpos = target;
         var Tcolor = board.position()[Tpos].substring(0,1);
         var Trank = board.position();
         Trank = Trank[String(Tpos)].substring(1,2);
+        var Tcorp = findCorpOfPiece(target, String(Tcolor + Trank));
 
         const attackAttemptJson = JSON.stringify({
             'actionType': 'ATTACK_ATTEMPT',
@@ -79,14 +239,16 @@ const onDrop = (source, target, piece, newPos, oldPos) => {
             'activePiece': {
                 'pos': Apos,
                 'color': Acolor,
-                'rank': Arank
+                'rank': Arank,
+                'corp': Acorp
             },
             'targetPiece': {
                 'pos': Tpos,
                 'color': Tcolor,
-                'rank': Trank
+                'rank': Trank,
+                'corp': Tcorp
             },
-            'actionCount': local_actionCount,
+            'corpList': local_corplist,
             'whiteMove': local_whiteMove
         });
 
@@ -97,6 +259,7 @@ const onDrop = (source, target, piece, newPos, oldPos) => {
         var pos = source;
         var color = String(piece).substring(0,1);
         var rank = String(piece).substring(1,2);
+        var corp = findCorpOfPiece(source, piece);
 
         if (pos != target) {
             const movementJson = JSON.stringify({
@@ -105,14 +268,16 @@ const onDrop = (source, target, piece, newPos, oldPos) => {
                 'activePiece': {
                     'pos': source,
                     'color': color,
-                    'rank': rank
+                    'rank': rank,
+                    'corp': corp
                 },
                 'targetPiece': {
                     'pos': target,
                     'color': color,
-                    'rank': rank
+                    'rank': rank,
+                    'corp': corp
                 },
-                'actionCount': local_actionCount,
+                'corpList': local_corplist,
                 'whiteMove': local_whiteMove
             });
 
@@ -127,11 +292,11 @@ const onDrop = (source, target, piece, newPos, oldPos) => {
     };
 }
 
-const onSnapEnd = () => {
-    setTimeout(() => {
-        board.position(local_boardstate, false);
-    }, 500);
-};
+// const onSnapEnd = () => {
+//     setTimeout(() => {
+//         board.position(local_boardstate, false);
+//     }, 500);
+// };
 
 // Configure for AI Game funcs
 var config = {
@@ -140,36 +305,12 @@ var config = {
     position: 'start',
     onDrop: onDrop,
     onDragStart: onDragStart,
-    onSnapEnd: onSnapEnd,
+    // onSnapEnd: onSnapEnd,
     pieceTheme: '/static/chessboard/{piece}.png',
 };
 
 // Render chessboard with config
 var board = Chessboard('my_board', config);
-
-// JQuery Element References
-var $whiteCapturedCon = $('#white-captured-con');
-var $blackCapturedCon = $('#black-captured-con');
-var $move_log = $("#move_log");
-var $die = $("#die");
-var $attacking_piece = $("#attacking-piece");
-var $defending_piece = $("#defending-piece");
-var $opp_pieces = $("#white-captured-con");
-var $own_pieces = $("#black-captured-con");
-var $attack_result = $("#attack-result");
-var $modalTitle = $('#modal-title');
-var $modalBody = $('#modal-body');
-
-// Local Gamestate Var Holders
-var local_boardstate = null;
-var local_isAIGame = null;
-var local_level = null;
-var local_whiteMove = null;
-var local_actionCount = null;
-var local_white_captured = null;
-var local_black_captured = null;
-var local_ai_action_list = null;
-var local_ai_move_list = null;
 
 const renderPieceListAnim = (white_captured, black_captured) => {
     let eliminatedPiece = $defending_piece.attr("src");
@@ -360,7 +501,7 @@ socket.onmessage = (message) => {
             local_isAIGame = data.isAIGame;
             local_level = data.level;
             local_whiteMove = data.whiteMove;
-            local_actionCount = data.actionCount;
+            local_corplist = data.corplist;
             local_white_captured = data.white_captured;
             local_black_captured = data.black_captured;
 
@@ -385,7 +526,7 @@ socket.onmessage = (message) => {
     }
     // On MOVEMENT actionType
     else if(data.actionType=="MOVEMENT") {
-        local_actionCount = data.actionCount;
+        local_corplist = data.corpList;
         local_boardstate = data.new_boardstate;
         local_whiteMove = data.whiteMove;
         
@@ -397,7 +538,7 @@ socket.onmessage = (message) => {
     }
     // On ATTACK_ATTEMPT actionType
     else if(data.actionType=="ATTACK_ATTEMPT") {
-        local_actionCount = data.actionCount;
+        local_corplist = data.corpList;
         local_boardstate = data.new_boardstate;
         local_whiteMove = data.whiteMove;
         
@@ -409,7 +550,9 @@ socket.onmessage = (message) => {
     }
     // On HIGHLIGHT actionType
     else if(data.actionType=="HIGHLIGHT") {
-        data.highlight_pos.forEach(pos => greySquare(pos));
+        data.in_range.forEach(pos => redSquare(pos));
+        data.setup.forEach(pos => greenSquare(pos));
+        data.movement.forEach(pos => greySquare(pos));
     }
     // On AI_ACTION_REQ actionType
     else if(data.actionType=="AI_TURN_RES") {
