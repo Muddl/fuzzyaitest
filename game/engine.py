@@ -288,7 +288,7 @@ class Boardstate:
         self.board = boardstate # Board representation in Position Obj notation
         
         self.corpLists = corpList # Contains the current state of corps & available actions for each
-        
+
         self.attackDict = {
             "K": {"K": 4, "Q": 4, "N": 4, "B": 4, "R": 5, "P": 1},
             "Q": {"K": 4, "Q": 4, "N": 4, "B": 4, "R": 5, "P": 2},
@@ -304,7 +304,7 @@ class Boardstate:
         self.knightsAttacked = []  # Stores the position of knights that have attempted an attack already
         self.blitzableKnightSquares = []  # Stores the possible squares a knight could blitz from.
         self.gameHistory = []  # Keeps a history of the actions in a game.
-    
+        
     # Function that moves the pieces, adds it to the game history, and swaps players - IMPORTANT
     def processAction(self, parsedAction):
         if (parsedAction["actionType"] == "MOVEMENT"):
