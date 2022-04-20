@@ -2503,16 +2503,16 @@ def get_movesets_per_board_state(board_state):
     return _df.sort_values(by=['capture_probability'], ascending=[False]) #HERE 
 
 
-def get_possible_moveset_per_piece(position, piece, team, board_state, whiteMove, corpList):
+def get_possible_moveset_per_piece(position, piece, team, board_state, whiteMove, corpList, readyToBlitz):
     if team == 'b':
         available_squares = get_black_squares_available(corpList)
         corp_string = get_black_corp(position,corpList)
-        board_state_obj = Boardstate(board_state, False, corpList)
+        board_state_obj = Boardstate(board_state, False, corpList, readyToBlitz)
         
     else:
         available_squares = get_white_squares_available(corpList)
         corp_string = get_white_corp(position, corpList)
-        board_state_obj = Boardstate(board_state, True, corpList)
+        board_state_obj = Boardstate(board_state, True, corpList, readyToBlitz)
 
 
     #print(available_squares)
@@ -2522,7 +2522,7 @@ def get_possible_moveset_per_piece(position, piece, team, board_state, whiteMove
     if current_piece_obj.pos not in available_squares:
         pass
     else:
-        in_range, setup, movement = board_state_obj.getValidMoveset(current_piece_obj) #will be getvalidmoveset
+        in_range, setup, movement = board_state_obj.getValidMoveset(current_piece_obj)
         if len(in_range) != 0:
             move_list = in_range
         elif len(in_range) == 0 and len(setup) != 0:
@@ -2530,19 +2530,10 @@ def get_possible_moveset_per_piece(position, piece, team, board_state, whiteMove
         else:
             move_list = movement
         
-        # print('Piece: ' + team + piece.upper() + ' at position: ' + position)
-        # print('in range')
-        # print(in_range)
-        # print('setup')
-        # print(setup)
-        # print('movement')
-        # print(movement)
-        # print('move list')
-        # print(move_list)
         return(move_list)
 
 
-def parse_board_state(board_state, iteration, corps_list, initial_piece_reference, list_of_corps_assignments, whiteMove, actionCounter):
+def parse_board_state(board_state, iteration, corps_list, initial_piece_reference, list_of_corps_assignments, whiteMove, corpList, readyToBlitz):
     df_converted_board_state = pd.DataFrame(
         columns=['piece_ID', 'piece', 'piece_type', 'color', 'starting_position', 'corps', 'moveset', 'possible_moves', ])
     # get all possible movesets per piece (and respective positions)
@@ -2567,7 +2558,7 @@ def parse_board_state(board_state, iteration, corps_list, initial_piece_referenc
             _piece_type = _piece[1].lower()
             _team = _piece[0]
             _moveset = get_possible_moveset_per_piece(
-                _starting_position, _piece_type, _team, board_state, whiteMove, actionCounter)
+                _starting_position, _piece_type, _team, board_state, whiteMove, corpList, readyToBlitz)
             try:
                 _possible_moves = len(_moveset)
             except:
@@ -2597,7 +2588,7 @@ def parse_board_state(board_state, iteration, corps_list, initial_piece_referenc
 
 
 
-def produceAction(boardstate, whiteMove, actionCounter):
+def produceAction(boardstate, whiteMove, corpList, readyToBlitz):
     current_board_state = boardstate #set to board_state_from_frontend
     list_of_corps_assignments = get_list_of_initial_corps_assignments(current_board_state)
     
@@ -2606,9 +2597,8 @@ def produceAction(boardstate, whiteMove, actionCounter):
     command_list = [1, 2, 3]
     i = 1
     while len(command_list) > 2:
-        current_turn_movesets = parse_board_state(current_board_state, i, command_list, initial_piece_reference, list_of_corps_assignments, whiteMove, actionCounter)
+        current_turn_movesets = parse_board_state(current_board_state, i, command_list, initial_piece_reference, list_of_corps_assignments, whiteMove, corpList, readyToBlitz)
         move_to_send = current_turn_movesets.iloc[0]['starting_position_attack'] + '-' + current_turn_movesets.iloc[0]['potential_position']
-        moves_to_send.append(move_to_send)
         command_list.remove(current_turn_movesets.iloc[0][3])
         i += 1
     
@@ -2616,59 +2606,72 @@ def produceAction(boardstate, whiteMove, actionCounter):
     Apos = move_to_send[0:2]
     Acolor = boardstate[Apos][:1]
     Arank = boardstate[Apos][1:2]
+    for corp in corpList['b']:
+        if Arank in ["K", "B"]:
+            Acorp = corpList['b'][corp]["leader"]["corp"]
+        else:
+            for piece in corpList['b'][corp]["under_command"]:
+                if piece["pos"] == Apos:
+                    Acorp = piece["corp"]
     #target piece
     Tpos = move_to_send[3:]
     
-    try:
-        Tcolor = boardstate[Tpos][:1]
-        Trank = boardstate[Tpos][1:2]
-        
-    except:
-        Tcolor = Acolor
-        Trank = Arank
-        
-    
-    if (Acolor == Tcolor):
+    if (Tpos not in boardstate):
         action_to_send = {
             'actionType': 'MOVEMENT',
             'isAIGame': True,
             'activePiece': {
                 'pos': Apos,
                 'color': Acolor,
-                'rank': Arank
+                'rank': Arank,
+                'corp': Acorp
             },
             'targetPiece': {
                 'pos': Tpos,
-                'color': Tcolor,
-                'rank': Trank
+                'color': Acolor,
+                'rank': Arank,
+                'corp': Acorp
             },
-            'actionCount': actionCounter,
+            'corpList': corpList,
             'whiteMove': whiteMove
         }
-    else:
+        
+    if Tpos in boardstate:
+        Tcolor = boardstate[Tpos][:1]
+        Trank = boardstate[Tpos][1:2]
+        for corp in corpList['w']:
+            if Trank in ["K", "B"]:
+                Tcorp = corpList['w'][corp]["leader"]["corp"]
+            else:
+                for piece in corpList['w'][corp]["under_command"]:
+                    if piece["pos"] == Tpos:
+                        Tcorp = piece["corp"]
+                        
         action_to_send = {
             'actionType': 'ATTACK_ATTEMPT',
             'isAIGame': True,
             'activePiece': {
                 'pos': Apos,
                 'color': Acolor,
-                'rank': Arank
+                'rank': Arank,
+                'corp': Acorp
             },
             'targetPiece': {
                 'pos': Tpos,
                 'color': Tcolor,
-                'rank': Trank
+                'rank': Trank,
+                'corp': Tcorp
             },
-            'actionCount': actionCounter,
+            'corpList': corpList,
             'whiteMove': whiteMove
         }
 
-    print(action_to_send)
-    #return action_to_send
+    # print(action_to_send)
+    return action_to_send
 
 
 
-#produceAction(PAWN_BOARD_STATE_1, False, PAWN_CORP_LIST_AI_1) #1
+#produceAction(PAWN_BOARD_STATE_1, False, PAWN_CORP_LIST_AI_1, []) #1
 #produceAction(PAWN_BOARD_STATE_2, False, PAWN_CORP_LIST_AI_2) #2
 #produceAction(PAWN_BOARD_STATE_3, False, PAWN_CORP_LIST_AI_3) #3
 
@@ -2684,7 +2687,7 @@ def produceAction(boardstate, whiteMove, actionCounter):
 
 #produceAction(dict_test_pawn_board_state, False, PAWN_CORP_LIST_AI)
 
-#produceAction(NO_PAWNS_BOARDSTATE, False, NO_PAWNS_CORP_LIST_AI)
+#produceAction(NO_PAWNS_BOARDSTATE, False, NO_PAWNS_CORP_LIST_AI, [])
 
 #get_possible_moveset_per_piece('c8','B','b', INITIAL_BOARDSTATE, False, INITIAL_CORP_LIST_AI)
 

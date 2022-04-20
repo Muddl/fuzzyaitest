@@ -3,7 +3,7 @@
 # We also were roughly following the sprint cycle chart given in the first week's presentation.
 # Next in progress for engine: Add knight blitzes, end states, timers, and a hook for the AI to latch into.
 from typing import Dict
-import random, re, sys, os
+import random, re, traceback
 
 # Constants
 INITIAL_BOARDSTATE = {
@@ -298,7 +298,6 @@ class Boardstate:
         }
         
         self.whiteMove = whiteMove  # Keeps track of whose turn it is
-        
         self.kingDead = None # Initially no kings dead  
         self.readyToBlitz = readyToBlitz  # Stores the traits of knights ready to blitz
         self.gameHistory = []  # Keeps a history of the actions in a game.
@@ -353,16 +352,12 @@ class Boardstate:
                         
                         return True, self.board, self.corpLists, self.whiteMove, self.readyToBlitz
                     else:
-                        return False, None
+                        return False, None, None, None, None
                 else:
-                    return False, None
-            except BaseException as err:
-                print(
-                    type(err).__name__,          # TypeError
-                    __file__,                  # /tmp/example.py
-                    err.__traceback__.tb_lineno  # 2
-                )
-                raise
+                    return False, None, None, None, None
+            except BaseException:
+                tb = traceback.format_exc()
+                print(tb)
                     
         elif (parsedAction["actionType"] == "ATTACK_ATTEMPT"):
             activePos = parsedAction["activePiece"]["pos"]
@@ -452,18 +447,12 @@ class Boardstate:
                             
                             return True, outcome, self.board, roll_val, self.corpLists, self.whiteMove, isBlitz, self.readyToBlitz, isEndGame, self.kingDead
                     else:
-                        print("failed targetPos in in_range")
-                        return False, False, None, -1, False
+                        return False, False, None, None, None, False, False, None, False, None
                 else:
-                    print("failed activePos in self.board")
-                    return False, False, None, -1, False
-            except BaseException as err:
-                print(
-                    type(err).__name__,          # TypeError
-                    __file__,                  # /tmp/example.py
-                    err.__traceback__.tb_lineno  # 2
-                )
-                raise
+                    return False, False, None, None, None, False, False, None, False, None
+            except BaseException:
+                tb = traceback.format_exc()
+                print(tb)
                     
         elif (parsedAction["actionType"] == "HIGHLIGHT"):
             activePos = parsedAction["activePiece"]["pos"]

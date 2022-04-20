@@ -488,8 +488,8 @@ socket.onclose = () => {
 
 // The meat of the JS function here, message processing from WS channel
 socket.onmessage = (message) => {
-    console.log("Got websocket message " + message.data);
     var data = JSON.parse(message.data);
+    console.log(data);
 
     // On JOIN actionType
     if (data.actionType=="JOIN") {
@@ -562,8 +562,12 @@ socket.onmessage = (message) => {
         local_ai_move_list = data.black_moves;
 
         for (let i = 0; i < 3; i++) {
-            if (local_ai_move_list[i] != null && local_ai_action_list[i].activePiece.rank != 'R') {
-                board.move(local_ai_move_list[i]);
+            if (local_ai_move_list[i] != "") {
+                if (local_ai_action_list[i].actionType == "ATTACK_ATTEMPT" && local_ai_action_list[i].isSuccessfulAttack == true && local_ai_action_list[i].activePiece.rank != 'R') {
+                    board.move(local_ai_move_list[i]);
+                } else if (local_ai_action_list[i].actionType == "MOVEMENT") {
+                    board.move(local_ai_move_list[i]);
+                }
             }
         }
     }

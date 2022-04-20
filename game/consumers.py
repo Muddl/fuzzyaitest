@@ -5,6 +5,8 @@ from .models import Game
 from .engine import Boardstate
 from .testAI import produceAction
 
+import traceback
+
 class GameConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         if self.scope["user"].is_anonymous:
@@ -260,92 +262,73 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     
     # Called on recieved request from front-end for an AI turn
     async def ai_turn_req(self, payload):
-        actionsRemain = False
-        for corp in payload["corpList"]["b"]:
-            if corp["command_authority_remaining"] == 1:
-                actionsRemain = True
-        
-        if (payload["whiteMove"] == False and actionsRemain and payload["isAIGame"]):
-            black_actions = [None, None, None]
-            black_moves = [None, None, None]
-            for index in range(payload["actionCount"], len(black_actions)):
-                currentBoardstate, currentWhiteMove, currentCorpList = await self.get_boardstate()
-                
-                AIAction = produceAction(currentBoardstate, currentWhiteMove, currentCorpList)
-                print(AIAction)
-                
-                board = Boardstate(boardstate=currentBoardstate, whiteMove=currentWhiteMove, corpList=currentCorpList)
-                
-                match AIAction["actionType"]:
-                    case "MOVEMENT":
-                        print("AI decided to move")
-                        isValidAction, new_boardstate, corpList, whiteMove = board.processAction(AIAction)
-                        
-                        if isValidAction:
-                            black_actions[index] = AIAction
-                            black_moves[index] = AIAction["activePiece"]["pos"] + "-" + AIAction["targetPiece"]["pos"]
-                            await self.update(new_boardstate, corpList, whiteMove)
-                        else:
-                            print(AIAction)
-                            print(f"{self.channel_name}\t-\tInvalid AI Movement on action {index}")
+        try:
+            whiteMove = payload["whiteMove"]
+            if (not whiteMove and payload["isAIGame"]):
+                black_actions = []
+                black_moves = []
+                while whiteMove == False:
+                    currentBoardstate, currentWhiteMove, currentCorpList, readyToBlitz = await self.get_boardstate()
+                    
+                    AIAction = produceAction(currentBoardstate, currentWhiteMove, currentCorpList, readyToBlitz)
+                    
+                    board = Boardstate(boardstate=currentBoardstate, whiteMove=currentWhiteMove, corpList=currentCorpList, readyToBlitz=readyToBlitz)
+                    
+                    match AIAction["actionType"]:
+                        case "MOVEMENT":
+                            isValidAction, new_boardstate, corpList, whiteMove, readyToBlitz = board.processAction(AIAction)
                             
-                    case "ATTACK_ATTEMPT":
-                        if (AIAction["activePiece"]["rank"] == "N" and AIAction["blitz"]):
-                            print("AI decided to blitz attack")
-                            isValidAction, isSuccessfulAttack, new_boardstate, roll_val, actionCount, whiteMove, blitz = board.processAction(AIAction)   
+                            if isValidAction:
+                                black_actions.append(AIAction)
+                                black_moves.append(AIAction["activePiece"]["pos"] + "-" + AIAction["targetPiece"]["pos"])
+                                await self.update(new_boardstate, corpList, whiteMove, readyToBlitz)
+                            else:
+                                print(AIAction)
+                                print(f"{self.channel_name}\t-\tInvalid AI Movement")
+                                
+                        case "ATTACK_ATTEMPT":
+                            isValidAction, isSuccessfulAttack, new_boardstate, roll_val, corpList, whiteMove, isBlitz, readyToBlitz, isEndGame, kingDead = board.processAction(AIAction)
+                            
+                            AIAction["roll_val"] = roll_val
+                            AIAction["isSuccessfulAttack"] = isSuccessfulAttack
+                            AIAction["isBlitz"] = isBlitz
+                            AIAction["readyToBlitz"] = readyToBlitz
+                            AIAction["new_boardstate"] = new_boardstate
+                            AIAction["corpList"] = corpList
+                            AIAction["whiteMove"] = whiteMove
                             
                             if isValidAction:
                                 if isSuccessfulAttack:
-                                    AIAction["roll_val"] = roll_val
-                                    AIAction["isSuccessfulAttack"] = isSuccessfulAttack
-                                    AIAction["blitz"] = blitz
-                                    black_actions[index] = AIAction
-                                    black_moves[index] = AIAction["activePiece"]["pos"] + "-" + AIAction["targetPiece"]["pos"]
-                                    await self.update(new_boardstate, actionCount, whiteMove)
+                                    if isEndGame:
+                                        pass
+                                    else:
+                                        black_actions.append(AIAction)
+                                        black_moves.append(AIAction["activePiece"]["pos"] + "-" + AIAction["targetPiece"]["pos"])
+                                        await self.update(new_boardstate, corpList, whiteMove, readyToBlitz)
                                 else:
-                                    AIAction["roll_val"] = roll_val
-                                    AIAction["isSuccessfulAttack"] = isSuccessfulAttack
-                                    AIAction["blitz"] = blitz
-                                    black_actions[index] = AIAction
-                                    black_moves[index] = ""
-                                    await self.update(new_boardstate, actionCount, whiteMove)
+                                    black_actions.append(AIAction)
+                                    black_moves.append("")
+                                    await self.update(new_boardstate, corpList, whiteMove, readyToBlitz)
                             else:
                                 print(AIAction)
-                                print(f"{self.channel_name}\t-\tInvalid AI Blitz Attack on action {index}")
-                        else:
-                            print("AI decided to attack")
-                            isValidAction, isSuccessfulAttack, new_boardstate, roll_val, actionCount, whiteMove = board.processAction(AIAction)
-                            
-                            if isValidAction:
-                                if isSuccessfulAttack:
-                                    AIAction["roll_val"] = roll_val
-                                    AIAction["isSuccessfulAttack"] = isSuccessfulAttack
-                                    black_actions[index] = AIAction
-                                    black_moves[index] = AIAction["activePiece"]["pos"] + "-" + AIAction["targetPiece"]["pos"]
-                                    await self.update(new_boardstate, actionCount, whiteMove)
-                                else:
-                                    AIAction["roll_val"] = roll_val
-                                    AIAction["isSuccessfulAttack"] = isSuccessfulAttack
-                                    black_actions[index] = AIAction
-                                    black_moves[index] = ""
-                                    await self.update(new_boardstate, actionCount, whiteMove)
-                            else:
-                                print(AIAction)
-                                print(f"{self.channel_name}\t-\tInvalid AI Non-Blitz Attack on action {index}")
+                                print(f"{self.channel_name}\t-\tInvalid AI Attack")
 
-            await self.channel_layer.group_send(
-                str(self.game_id), 
-                {
-                    "type": "ai.turn.res",
-                    "actionType": "AI_TURN_RES",
-                    "black_actions": black_actions,
-                    "black_moves": black_moves,
-                    'sender_channel_name': self.channel_name
-                }
-            )
-            print(f"{self.channel_name}\t-\tValidated & Processed AI_TURN_REQ")
-        else:
-            print(f"{self.channel_name}\t-\tFailed to Validate And/Or Process AI_TURN_REQ")
+                await self.channel_layer.group_send(
+                    str(self.game_id), 
+                    {
+                        "type": "ai.turn.res",
+                        "actionType": "AI_TURN_RES",
+                        "black_actions": black_actions,
+                        "black_moves": black_moves,
+                        'sender_channel_name': self.channel_name
+                    }
+                )
+                print(f"{self.channel_name}\t-\tValidated & Processed AI_TURN_REQ")
+            else:
+                print(f"{self.channel_name}\t-\tFailed to Validate And/Or Process AI_TURN_REQ")
+        except BaseException:
+            tb = traceback.format_exc()
+            print(tb)
     
     async def ai_turn_res(self, event):
         await self.send_json({
