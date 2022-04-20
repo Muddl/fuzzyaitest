@@ -404,6 +404,8 @@ class Boardstate:
                             if outcome:
                                 if activeRank in ["K", "B"]:
                                     self.corpLists[friendly][activeCorp]["leader"]["pos"] = targetPos
+                                elif activeRank == "R":
+                                    pass
                                 else:
                                     for index, piece in enumerate(self.corpLists[friendly][activeCorp]["under_command"]):
                                         if piece == parsedAction["activePiece"]:

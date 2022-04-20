@@ -189,8 +189,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     
     # Pair handler of new_move(), recieves the event broadcast request & sends relevent message
     async def attempt_attack(self, event):
-        if event['isSuccessfulAttack']:
-            if event['kingDead']:
+        if 'isSuccessfulAttack' in event:
+            if 'kingDead' in event:
                 pass
             else:
                 print(f"{event['sender_channel_name']}\t-\tSending Attempt-Attack as Successful")

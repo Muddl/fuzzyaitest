@@ -293,11 +293,9 @@ const onDrop = (source, target, piece, newPos, oldPos) => {
     };
 }
 
-// const onSnapEnd = () => {
-//     setTimeout(() => {
-//         board.position(local_boardstate, false);
-//     }, 500);
-// };
+const onSnapEnd = () => {
+    board.position(local_boardstate, false);
+};
 
 // Configure for AI Game funcs
 var config = {
@@ -306,7 +304,7 @@ var config = {
     position: 'start',
     onDrop: onDrop,
     onDragStart: onDragStart,
-    // onSnapEnd: onSnapEnd,
+    onSnapEnd: onSnapEnd,
     pieceTheme: '/static/chessboard/{piece}.png',
 };
 
