@@ -41,7 +41,7 @@ const findCorpOfPiece = (source, piece) => {
     if (Acolor == "w") {
         switch (Arank) {
             case "P":
-                Object.entries(local_corplist.whiteCorps).forEach((corpKey) => {
+                Object.entries(local_corplist.w).forEach((corpKey) => {
                     corpKey[1].under_command.forEach((piece) => {
                         if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
                             Acorp = piece.corp;
@@ -51,7 +51,7 @@ const findCorpOfPiece = (source, piece) => {
                 console.log(Acorp);
                 break;
             case "B":
-                Object.entries(local_corplist.whiteCorps).forEach((corpKey) => {
+                Object.entries(local_corplist.w).forEach((corpKey) => {
                     if (corpKey[1].leader.pos == Apos && corpKey[1].leader.color == Acolor && corpKey[1].leader.rank == Arank) {
                         Acorp = corpKey[1].leader.corp;
                     };
@@ -59,7 +59,7 @@ const findCorpOfPiece = (source, piece) => {
                 console.log(Acorp);
                 break;
             case "N":
-                Object.entries(local_corplist.whiteCorps).forEach((corpKey) => {
+                Object.entries(local_corplist.w).forEach((corpKey) => {
                     corpKey[1].under_command.forEach((piece) => {
                         if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
                             Acorp = piece.corp;
@@ -69,7 +69,7 @@ const findCorpOfPiece = (source, piece) => {
                 console.log(Acorp);
                 break;
             case "R":
-                Object.entries(local_corplist.whiteCorps).forEach((corpKey) => {
+                Object.entries(local_corplist.w).forEach((corpKey) => {
                     corpKey[1].under_command.forEach((piece) => {
                         if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
                             Acorp = piece.corp;
@@ -79,7 +79,7 @@ const findCorpOfPiece = (source, piece) => {
                 console.log(Acorp);
                 break;
             case "Q":
-                Object.entries(local_corplist.whiteCorps).forEach((corpKey) => {
+                Object.entries(local_corplist.w).forEach((corpKey) => {
                     corpKey[1].under_command.forEach((piece) => {
                         if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
                             Acorp = piece.corp;
@@ -89,7 +89,7 @@ const findCorpOfPiece = (source, piece) => {
                 console.log(Acorp);
                 break;
             case "K":
-                Object.entries(local_corplist.whiteCorps).forEach((corpKey) => {
+                Object.entries(local_corplist.w).forEach((corpKey) => {
                     if (corpKey[1].leader.pos == Apos && corpKey[1].leader.color == Acolor && corpKey[1].leader.rank == Arank) {
                         Acorp = corpKey[1].leader.corp;
                     };
@@ -100,7 +100,7 @@ const findCorpOfPiece = (source, piece) => {
     } else {
         switch (Arank) {
             case "P":
-                Object.entries(local_corplist.blackCorps).forEach((corpKey) => {
+                Object.entries(local_corplist.b).forEach((corpKey) => {
                     corpKey[1].under_command.forEach((piece) => {
                         if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
                             Acorp = piece.corp;
@@ -110,7 +110,7 @@ const findCorpOfPiece = (source, piece) => {
                 console.log(Acorp);
                 break;
             case "B":
-                Object.entries(local_corplist.blackCorps).forEach((corpKey) => {
+                Object.entries(local_corplist.b).forEach((corpKey) => {
                     if (corpKey[1].leader.pos == Apos && corpKey[1].leader.color == Acolor && corpKey[1].leader.rank == Arank) {
                         Acorp = corpKey[1].leader.corp;
                     };
@@ -118,7 +118,7 @@ const findCorpOfPiece = (source, piece) => {
                 console.log(Acorp);
                 break;
             case "N":
-                Object.entries(local_corplist.blackCorps).forEach((corpKey) => {
+                Object.entries(local_corplist.b).forEach((corpKey) => {
                     corpKey[1].under_command.forEach((piece) => {
                         if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
                             Acorp = piece.corp;
@@ -128,7 +128,7 @@ const findCorpOfPiece = (source, piece) => {
                 console.log(Acorp);
                 break;
             case "R":
-                Object.entries(local_corplist.blackCorps).forEach((corpKey) => {
+                Object.entries(local_corplist.b).forEach((corpKey) => {
                     corpKey[1].under_command.forEach((piece) => {
                         if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
                             Acorp = piece.corp;
@@ -138,7 +138,7 @@ const findCorpOfPiece = (source, piece) => {
                 console.log(Acorp);
                 break;
             case "Q":
-                Object.entries(local_corplist.blackCorps).forEach((corpKey) => {
+                Object.entries(local_corplist.b).forEach((corpKey) => {
                     corpKey[1].under_command.forEach((piece) => {
                         if (piece.pos == Apos && piece.color == Acolor && piece.rank == Arank) {
                             Acorp = piece.corp;
@@ -148,7 +148,7 @@ const findCorpOfPiece = (source, piece) => {
                 console.log(Acorp);
                 break;
             case "K":
-                Object.entries(local_corplist.blackCorps).forEach((corpKey) => {
+                Object.entries(local_corplist.b).forEach((corpKey) => {
                     if (corpKey[1].leader.pos == Apos && corpKey[1].leader.color == Acolor && corpKey[1].leader.rank == Arank) {
                         Acorp = corpKey[1].leader.corp;
                     };
@@ -464,7 +464,7 @@ const startAITurn = () => {
     const requestAIJSON = JSON.stringify({
         'actionType': 'AI_TURN_REQ',
         'isAIGame': local_isAIGame,
-        'actionCount': local_actionCount,
+        'corpList': local_corplist,
         'whiteMove': local_whiteMove
     });
 
