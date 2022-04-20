@@ -483,7 +483,7 @@ class Boardstate:
                         elif (self.board.get(position)[0] == "w"): # If enemy
                             in_range.append(position)
         
-        return (in_range, setup, movement)
+        return (list(set(in_range)), list(set(setup)), list(set(movement)))
     
     def getBishopValidMoveset(self, selected):
         selectedPos = selected.getPos()
@@ -496,6 +496,7 @@ class Boardstate:
         movement = []
         
         base_list = getAdjSquares(selectedPos, True) # Base surrounding adjacent squares for current pawn position
+        
         if (selected.getTraits() == self.corpLists[friendly][selectedCorp]["leader"]): # Confirm piece is a bishop & the leader of its corp
             if self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Attacks/Captures/Full Movement
                 max_bishop_range = [
@@ -509,31 +510,62 @@ class Boardstate:
                     f"{chr(ord(selectedPos[0])-1)}{chr(ord(selectedPos[1])-1)}",  f"{chr(ord(selectedPos[0])-2)}{chr(ord(selectedPos[1])-2)}", # SW Pos
                 ]
                 cleaned_range = [pos for pos in max_bishop_range if isValidAlgeNotation(pos)]
-                functional_range = [pos for pos in cleaned_range if not self.isLineBlocked(selectedPos, pos)]
+                in_range = [pos for pos in cleaned_range if ((pos in base_list) and (str(self.board.get(pos))[0] == enemy))]
+                cleaned_no_attackable_range = [pos for pos in cleaned_range if pos not in in_range]
+                functional_range = [pos for pos in cleaned_no_attackable_range if not self.isLineBlocked(selectedPos, pos)]
                 for pos in functional_range:
                     if pos not in self.board:
                         movement.append(pos)
-                    elif self.board.get(pos)[0] == enemy:
-                        if pos in base_list:
-                            in_range.append(pos)
-                        else:
-                            potential_setup = getAdjSquares(pos, True)
-                            potential_setup_pos = [repeated for repeated in potential_setup if repeated in base_list]
-                            for potential_setup_pos in potential_setup:
-                                if potential_setup_pos not in self.board:
-                                    setup.append(potential_setup_pos)
+                for pos in movement:
+                    adj_to_move = getAdjSquares(pos, True)
+                    enemies_adj_to_pos = [pos for pos in adj_to_move if str(self.board.get(pos))[0] == enemy]
+                    if len(enemies_adj_to_pos) > 0:
+                        setup.append(pos)
+                movement = [pos for pos in movement if pos not in setup]
             else: # Commander's Movement
                 for pos in base_list:
                     if pos not in self.board:
                         movement.append(pos)
 
-        return (in_range, setup, movement)
+        return (list(set(in_range)), list(set(setup)), list(set(movement)))
     
     def getRookValidMoveset(self, selected):
-        selectedColor = selected.getColor()
-        selectedRank = selected.getRank()
-        selectedPos = selected.getPos()
-        selectedCorp = selected.getCorp()
+        def getRookMoveRange(pos):
+            max_rook_move_range =  [
+                f"{pos[0]}{chr(ord(pos[1])+1)}", f"{pos[0]}{chr(ord(pos[1])+2)}", # North Pos
+                f"{pos[0]}{chr(ord(pos[1])-1)}", f"{pos[0]}{chr(ord(pos[1])-2)}", # South Pos
+                f"{chr(ord(pos[0])+1)}{pos[1]}", f"{chr(ord(pos[0])+2)}{pos[1]}", # East Pos
+                f"{chr(ord(pos[0])-1)}{pos[1]}", f"{chr(ord(pos[0])-2)}{pos[1]}", # West Pos
+                f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])+2)}", # NE Pos
+                f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])+2)}", # NW Pos
+                f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])-2)}", # SE Pos
+                f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])-2)}", # SW Pos
+            ]
+            return [pos for pos in max_rook_move_range if isValidAlgeNotation(pos)]
+
+        def getRookAttackRange(pos):
+            max_rook_attack_range = [
+                f"{pos[0]}{chr(ord(pos[1])+1)}", f"{pos[0]}{chr(ord(pos[1])+2)}", f"{pos[0]}{chr(ord(pos[1])+3)}", # North Pos
+                f"{pos[0]}{chr(ord(pos[1])-1)}", f"{pos[0]}{chr(ord(pos[1])-2)}", f"{pos[0]}{chr(ord(pos[1])-3)}", # South Pos
+                f"{chr(ord(pos[0])+1)}{pos[1]}", f"{chr(ord(pos[0])+2)}{pos[1]}", f"{chr(ord(pos[0])+3)}{pos[1]}", # East Pos
+                f"{chr(ord(pos[0])-1)}{pos[1]}", f"{chr(ord(pos[0])-2)}{pos[1]}", f"{chr(ord(pos[0])-3)}{pos[1]}", # West Pos
+                f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])+2)}", f"{chr(ord(pos[0])+3)}{chr(ord(pos[1])+3)}", # NE Pos
+                f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])+2)}", f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])+3)}", f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])+3)}", # NE Block Non-Linear Pos - North Half
+                f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])+3)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])+3)}{chr(ord(pos[1])+2)}", # NE Block Non-Linear Pos - South Half
+                f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])+2)}", f"{chr(ord(pos[0])-3)}{chr(ord(pos[1])+3)}", # NW Pos
+                f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])+2)}", f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])+3)}", f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])+3)}", # NW Block Non-Linear Pos - North Half
+                f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])-3)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])-3)}{chr(ord(pos[1])+2)}", # NW Block Non-Linear Pos - South Half
+                f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])-2)}", f"{chr(ord(pos[0])+3)}{chr(ord(pos[1])-3)}", # SE Pos
+                f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])-2)}", f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])-3)}", f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])-3)}", # SE Block Non-Linear Pos - North Half
+                f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])+3)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])+3)}{chr(ord(pos[1])-2)}", # SE Block Non-Linear Pos - South Half
+                f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])-2)}", f"{chr(ord(pos[0])-3)}{chr(ord(pos[1])-3)}", # SW Pos
+                f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])-2)}", f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])-3)}", f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])-3)}", # SW Block Non-Linear Pos - North Half
+                f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])-3)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])-3)}{chr(ord(pos[1])-2)}", # SW Block Non-Linear Pos - South Half
+            ]
+            return [pos for pos in max_rook_attack_range if isValidAlgeNotation(pos)]
+        
+        selectedPos = selected.pos
+        selectedCorp = selected.corp
         friendly = 'w' if self.whiteMove else 'b'
         enemy = 'b' if self.whiteMove else 'w'
         
@@ -541,36 +573,18 @@ class Boardstate:
         setup = []
         movement = []
         
-        base_list = getAdjSquares(selectedPos, True) # Base surrounding adjacent squares for current pawn position
+        if (selected.getTraits() in self.corpLists[friendly][selectedCorp]["under_command"]) and (self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1):
+            in_range = [pos for pos in getRookAttackRange(selectedPos) if str(self.board.get(pos))[0] == enemy]
+            base_move_range = [pos for pos in getRookMoveRange(selectedPos) if pos not in self.board]
+            movement = [pos for pos in base_move_range if not self.isLineBlocked(selectedPos, pos)]
+            for pos in in_range:
+                attackable_from = getRookAttackRange(pos)
+                for pos in attackable_from:
+                    if pos in movement:
+                        setup.append(pos)
+            movement = [pos for pos in movement if pos not in setup]
 
-        if selectedRank == 'R' and (selected in self.corpList[friendly][selectedCorp]["under_command"]) and self.corpList[friendly][selectedCorp]["command_authority_remaining"] == 1:
-            if selectedColor != enemy:
-                # Movement
-                for position in base_list:
-                    sublist = getAdjSquares(position, True)
-                    for subpos in sublist:
-                        if subpos not in self.board:
-                            if subpos not in empty_spaces:
-                                empty_spaces.append(subpos)
-                        elif self.board.get(subpos)[0] == enemy:
-                            enemy_spaces.append(subpos)
-
-                # Calculate all the squares the rook can target for an attack
-                east_range = ord(selectedPos[0]) + 3
-                west_range = ord(selectedPos[0]) - 3
-                north_range = int(selectedPos[1]) + 3
-                south_range = int(selectedPos[1]) - 3
-
-                # Iterates through each square and checks that a square is not out of bounds and is an enemy
-                for r in range(south_range, north_range + 1):
-                    if 0 < r < 9:
-                        for c in range(west_range, east_range + 1):
-                            if 96 < c < 106:
-                                target = str(chr(c)) + str(r)
-                                if target in self.board:
-                                    if self.board[target][0] == enemy and target not in enemy_spaces:
-                                        enemy_spaces.append(target)
-        return (empty_spaces, enemy_spaces)
+        return (list(set(in_range)), list(set(setup)), list(set(movement)))
     
     # For both kings and queens
     def getValidRoyalMoveset(self, selected):
@@ -672,32 +686,30 @@ class Boardstate:
     def isLineBlocked(self, selectedPos, targetPos):
         match getDirection(selectedPos, targetPos):
             case 1:  # Directly North
-                for row in range(int(selectedPos[1]), int(targetPos[1])):
-                    current_pos = selectedPos[0] + str(row)
+                for row in range(int(selectedPos[1]), int(targetPos[1]), 1):
+                    current_pos = selectedPos[0] + str(row+1)
                     if current_pos in self.board:
                         return True
 
             case -1:  # Directly South
-                for row in range(int(targetPos[1]), int(selectedPos[1])):
-                    current_pos = selectedPos[0] + str(row)
+                for row in range(int(selectedPos[1]), int(targetPos[1]), -1):
+                    current_pos = selectedPos[0] + str(row-1)
                     if current_pos in self.board:
                         return True
 
             case 10:  # Directly East
                 norm_selectedPos = ord(selectedPos[0]) - ord("a")
                 norm_targetPos = ord(targetPos[0]) - ord("a")
-                distance = norm_targetPos - norm_selectedPos
-                for col in range(norm_selectedPos, norm_selectedPos + distance):
-                    current_pos = chr(col + ord("a")) + selectedPos[1]
+                for col in range(norm_selectedPos, norm_targetPos, 1):
+                    current_pos = chr(col + 1 + ord("a")) + selectedPos[1]
                     if current_pos in self.board:
                         return True
 
             case -10:  # Directly West
                 norm_selectedPos = ord(selectedPos[0]) - ord("a")
                 norm_targetPos = ord(targetPos[0]) - ord("a")
-                distance = norm_selectedPos - norm_targetPos
-                for col in range(norm_targetPos, norm_targetPos + distance):
-                    current_pos = chr(col + ord("a")) + selectedPos[1]
+                for col in range(norm_selectedPos, norm_targetPos, -1):
+                    current_pos = chr(col - 1 + ord("a")) + selectedPos[1]
                     if current_pos in self.board:
                         return True
 
