@@ -31,6 +31,7 @@ var local_white_captured = null;
 var local_black_captured = null;
 var local_ai_action_list = null;
 var local_ai_move_list = null;
+var local_readyToBlitz = null;
 
 const findCorpOfPiece = (source, piece) => {
     const Apos = source;
@@ -504,6 +505,7 @@ socket.onmessage = (message) => {
             local_corplist = data.corplist;
             local_white_captured = data.white_captured;
             local_black_captured = data.black_captured;
+            local_readyToBlitz = data.readyToBlitz;
 
             board.position(local_boardstate);
 

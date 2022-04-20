@@ -201,7 +201,7 @@ INITIAL_CORP_LIST = {
                     "corp" : "leftBishopCorp"
                 },
                 {
-                    "pos": "b7",
+                    "pos": "b8",
                     "color" : "b",
                     "rank" : "N",
                     "corp" : "leftBishopCorp"
@@ -280,7 +280,7 @@ class Piece:
 
 class Boardstate:
     # Initializes an empty board and game in code (not gui)
-    def __init__(self, boardstate: Dict[str, str], whiteMove: bool, corpList):
+    def __init__(self, boardstate: Dict[str, str], whiteMove: bool, corpList, readyToBlitz):
         # Game board from white's perspective
         # NOTE - I've seen this done with just strings, numbers, etc.
         # All are probably more efficient but a pain to read and work with
@@ -301,8 +301,7 @@ class Boardstate:
         self.whiteMove = whiteMove  # Keeps track of whose turn it is
         
         self.kingDead = 0 # Initially no kings dead  
-        self.knightsAttacked = []  # Stores the position of knights that have attempted an attack already
-        self.blitzableKnightSquares = []  # Stores the possible squares a knight could blitz from.
+        self.readyToBlitz = readyToBlitz  # Stores the traits of knights ready to blitz
         self.gameHistory = []  # Keeps a history of the actions in a game.
         
     # Function that moves the pieces, adds it to the game history, and swaps players - IMPORTANT
@@ -336,9 +335,8 @@ class Boardstate:
                                 piece["pos"] = targetPos
 
                     if (activeRank == "N"): # Add knight to moved
-                        self.knightsAttacked.append(targetPos)
-                        # TODO: Add knight blitzable squares calc here
-                    
+                        self.readyToBlitz.append(targetPos)
+                        
                     turnend = True
                     if self.corpLists[friendly]["kingCorp"]["command_authority_remaining"] == 1:
                         turnend = False
@@ -352,13 +350,14 @@ class Boardstate:
                         self.corpLists[friendly]["leftBishopCorp"]["command_authority_remaining"] = 1
                         self.corpLists[friendly]["rightBishopCorp"]["command_authority_remaining"] = 1
                         self.whiteMove = not self.whiteMove  # Swaps players.
-                        self.knightsAttacked = []
+                        self.readyToBlitz = []
                         
                     self.gameHistory.append(parsedAction)  # Adds the action to the game history
                     
-                    # print(self.corpLists)
-                    
-                    return True, self.board, self.corpLists, self.whiteMove
+                    if (activeRank == "N"):
+                        return True, self.board, self.corpLists, self.whiteMove, self.readyToBlitz
+                    else:
+                        return True, self.board, self.corpLists, self.whiteMove
                 else:
                     return False, None
             else:
@@ -601,19 +600,22 @@ class Boardstate:
             in_range = [pos for pos in base_list if str(self.board.get(pos))[0] == enemy]
             
             first_iter_moves = [pos for pos in base_list if pos not in self.board]
+            movement = movement + first_iter_moves
             second_iter_moves = []
-            third_iter_moves = []
             for pos in first_iter_moves:
                 sublist = getAdjSquares(pos, True)
                 for pos in sublist:
                     if pos not in self.board:
                         second_iter_moves.append(pos)
+            movement = movement + second_iter_moves
+            third_iter_moves = []
             for pos in second_iter_moves:
                 sublist = getAdjSquares(pos, True)
                 for pos in sublist:
                     if pos not in self.board:
                         third_iter_moves.append(pos)
-            movement = list(set(third_iter_moves))
+            movement = movement + third_iter_moves
+            movement = list(set(movement))
             
             for pos in movement:
                 adj_to_move = getAdjSquares(pos, True)
@@ -640,19 +642,22 @@ class Boardstate:
                 in_range = [pos for pos in base_list if str(self.board.get(pos))[0] == enemy]
                 
                 first_iter_moves = [pos for pos in base_list if pos not in self.board]
+                movement = movement + first_iter_moves
                 second_iter_moves = []
-                third_iter_moves = []
                 for pos in first_iter_moves:
                     sublist = getAdjSquares(pos, True)
                     for pos in sublist:
                         if pos not in self.board:
                             second_iter_moves.append(pos)
+                movement = movement + second_iter_moves
+                third_iter_moves = []
                 for pos in second_iter_moves:
                     sublist = getAdjSquares(pos, True)
                     for pos in sublist:
                         if pos not in self.board:
                             third_iter_moves.append(pos)
-                movement = list(set(third_iter_moves))
+                movement = movement + third_iter_moves
+                movement = list(set(movement))
                 
                 for pos in movement:
                     adj_to_move = getAdjSquares(pos, True)
@@ -668,74 +673,55 @@ class Boardstate:
         return (list(set(in_range)), list(set(setup)), list(set(movement)))
     
     def getValidKnightMoveset(self, selected):
-        selected_color = selected.getColor()
-        selected_rank = selected.getRank()
-        selected_pos = selected.getPos()
+        selectedPos = selected.pos
+        selectedCorp = selected.corp
+        friendly = 'w' if self.whiteMove else 'b'
         enemy = 'b' if self.whiteMove else 'w'
 
-        empty_squares = []
-        enemy_squares = []
-
-        base_list = getAdjSquares(selected_pos, True)
-        if selected_rank == 'N':
-            if selected_color != enemy:
-                # A knight cannot attack then move, but it can repeatedly attack after its initial attack.
-                # As such, adjacent enemies will still be added.
-                if selected_pos in self.knightsAttacked:
-                    for position in base_list:
-                        if position in self.board:
-                            if self.board[0] == enemy:
-                                enemy_squares.append(position)
-
-                else:
-                    counter = 0
-                    container = []
-                    while counter < 5:
-                        step_list = []
-                        if counter == 0:
-                            for position in base_list:
-                                if position not in self.board:
-                                    empty_squares.append(position)
-                                    step_list.append(position)
-                                elif self.board[position][0] is enemy:
-                                    enemy_squares.append(position)
-                            container.append(step_list)
-                        elif counter < 4:
-                            for position in container[counter - 1]:
-                                step_list2 = getAdjSquares(position, True)
-                                for i in step_list2:
-                                    if i not in self.board and i not in empty_squares:
-                                        empty_squares.append(i)
-                                        step_list.append(i)
-                                    elif i in self.board and i not in enemy_squares:
-                                        if self.board[i][0] == enemy:
-                                            enemy_squares.append(i)
-
-                            container.append(step_list)
-                        else:
-                            for position in container[counter - 1]:
-                                step_list2 = getAdjSquares(position, True)
-                                for i in step_list2:
-                                    if i in self.board and i not in enemy_squares:
-                                        if self.board[i][0] == enemy:
-                                            enemy_squares.append(i)
-                        counter += 1
-
-            # Cross check the empty squares and enemy squares and give valid landing squares for a blitz
-            # IMPORTANT NOTE - I don't know how the knightLanding Squares are going to be stored/handled.
-            # The following code creates a dictionary that stores an array of the valid squares the knight can land for a blitz.
-            blitzDict = {}
-            for i in enemy_squares:
-                blitzDict[i] = []
-
-            for i in blitzDict:
-                tempList = getAdjSquares(i, True)
-                for j in tempList:
-                    if j in empty_squares:
-                        blitzDict[i].append(j)
-            self.blitzableKnightSquares = blitzDict
-
-        return (empty_squares, enemy_squares)
+        base_list = getAdjSquares(selectedPos, True)
+        in_range = []
+        setup = []
+        movement = []
+        
+        if (selected.getTraits() in self.corpLists[friendly][selectedCorp]["under_command"]): # Confirm piece is a knight & under_command of its corp
+            if self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Non-Blitz Attacks/Setup/Movement
+                in_range = [pos for pos in base_list if str(self.board.get(pos))[0] == enemy]
+                
+                first_iter_moves = [pos for pos in base_list if pos not in self.board]
+                movement = movement + first_iter_moves
+                second_iter_moves = []
+                for pos in first_iter_moves:
+                    sublist = getAdjSquares(pos, True)
+                    for pos in sublist:
+                        if pos not in self.board:
+                            second_iter_moves.append(pos)
+                movement = movement + second_iter_moves
+                third_iter_moves = []
+                for pos in second_iter_moves:
+                    sublist = getAdjSquares(pos, True)
+                    for pos in sublist:
+                        if pos not in self.board:
+                            third_iter_moves.append(pos)
+                movement = movement + third_iter_moves
+                fourth_iter_moves = []
+                for pos in third_iter_moves:
+                    sublist = getAdjSquares(pos, True)
+                    for pos in sublist:
+                        if pos not in self.board:
+                            fourth_iter_moves.append(pos)
+                movement = movement + fourth_iter_moves
+                movement = list(set(movement))
+                
+                for pos in movement:
+                    adj_to_move = getAdjSquares(pos, True)
+                    enemies_adj_to_pos = [pos for pos in adj_to_move if str(self.board.get(pos))[0] == enemy]
+                    if len(enemies_adj_to_pos) > 0:
+                        setup.append(pos)
+                movement = [pos for pos in movement if pos not in setup]
+            elif (self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 0) and (selected.pos in self.readyToBlitz): # Blitz Attacking
+                in_range = [pos for pos in base_list if str(self.board.get(pos))[0] == enemy]
+        
+        return (list(set(in_range)), list(set(setup)), list(set(movement)))
     
     def isLineBlocked(self, selectedPos, targetPos):
         match getDirection(selectedPos, targetPos):
