@@ -325,8 +325,8 @@ class Boardstate:
                         curPiece = self.board.pop(activePos)
                         self.board[targetPos] = curPiece
                         
-                        # Set corp's action to zero, change corp data to reflect move
-                        self.corpLists[friendly][activeCorp]["command_authority_remaining"] = 0
+                        # Decrement command_authority_remaining, change corp data to reflect move
+                        self.corpLists[friendly][activeCorp]["command_authority_remaining"] = self.corpLists[friendly][activeCorp]["command_authority_remaining"] - 1
                         if activeRank == "B" or activeRank == "K":
                             self.corpLists[friendly][activeCorp]["leader"]["pos"] = targetPos
                         else:
@@ -426,8 +426,8 @@ class Boardstate:
                                             print("Removing successfully defeated piece pos from corpList")
                                             del self.corpLists[enemy][targetCorp]["under_command"][index]
                             
-                            # Set command_authority_remaining to 0
-                            self.corpLists[friendly][activeCorp]["command_authority_remaining"] = 0
+                            # Decrement command_authority_remaining
+                            self.corpLists[friendly][activeCorp]["command_authority_remaining"] = self.corpLists[friendly][activeCorp]["command_authority_remaining"] - 1
                             
                             # Check for any remaining actions
                             turnend = True
@@ -573,7 +573,7 @@ class Boardstate:
                     if len(enemies_adj_to_pos) > 0:
                         setup.append(pos)
                 movement = [pos for pos in movement if pos not in setup]
-            else: # Commander's Movement
+            elif self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 0: # Commander's Movement
                 for pos in base_list:
                     if pos not in self.board:
                         movement.append(pos)
@@ -718,7 +718,7 @@ class Boardstate:
                     if len(enemies_adj_to_pos) > 0:
                         setup.append(pos)
                 movement = [pos for pos in movement if pos not in setup]
-            else: # Commander's Movement
+            elif self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 0: # Commander's Movement
                 for pos in base_list:
                     if pos not in self.board:
                         movement.append(pos)
