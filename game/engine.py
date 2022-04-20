@@ -586,32 +586,86 @@ class Boardstate:
 
         return (list(set(in_range)), list(set(setup)), list(set(movement)))
     
-    # For both kings and queens
-    def getValidRoyalMoveset(self, selected):
-        selectedColor = selected.getColor()
-        selectedRank = selected.getRank()
-        selectedPos = selected.getPos()
+    def getValidQueenMoveset(self, selected):
+        selectedPos = selected.pos
+        selectedCorp = selected.corp
+        friendly = 'w' if self.whiteMove else 'b'
         enemy = 'b' if self.whiteMove else 'w'
 
         base_list = getAdjSquares(selectedPos, True)
-        empty_spaces = []
-        enemy_spaces = []
+        in_range = []
+        setup = []
+        movement = []
 
-        if (selectedRank in ["K", "Q"] and self.actionCounter < 3):
-            if selectedColor != enemy:
-                for position in base_list:
-                    sublist = getAdjSquares(position, True)
-                    for subpos in sublist:
-                        metalist = getAdjSquares(subpos, True)
-                        for metapos in metalist:
-                            if metapos not in self.board:
-                                if metapos not in empty_spaces:
-                                    empty_spaces.append(metapos)
-                            elif self.board.get(metapos)[0] == enemy:
-                                if metapos not in enemy_spaces:
-                                    enemy_spaces.append(metapos)
+        if (selected.getTraits() in self.corpLists[friendly][selectedCorp]["under_command"]) and (self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1):
+            in_range = [pos for pos in base_list if str(self.board.get(pos))[0] == enemy]
+            
+            first_iter_moves = [pos for pos in base_list if pos not in self.board]
+            second_iter_moves = []
+            third_iter_moves = []
+            for pos in first_iter_moves:
+                sublist = getAdjSquares(pos, True)
+                for pos in sublist:
+                    if pos not in self.board:
+                        second_iter_moves.append(pos)
+            for pos in second_iter_moves:
+                sublist = getAdjSquares(pos, True)
+                for pos in sublist:
+                    if pos not in self.board:
+                        third_iter_moves.append(pos)
+            movement = list(set(third_iter_moves))
+            
+            for pos in movement:
+                adj_to_move = getAdjSquares(pos, True)
+                enemies_adj_to_pos = [pos for pos in adj_to_move if str(self.board.get(pos))[0] == enemy]
+                if len(enemies_adj_to_pos) > 0:
+                    setup.append(pos)
+            movement = [pos for pos in movement if pos not in setup]
         
-        return (empty_spaces, enemy_spaces)
+        return (list(set(in_range)), list(set(setup)), list(set(movement)))
+    
+    def getValidKingMoveset(self, selected):
+        selectedPos = selected.pos
+        selectedCorp = selected.corp
+        friendly = 'w' if self.whiteMove else 'b'
+        enemy = 'b' if self.whiteMove else 'w'
+
+        base_list = getAdjSquares(selectedPos, True)
+        in_range = []
+        setup = []
+        movement = []
+
+        if (selected.getTraits() == self.corpLists[friendly][selectedCorp]["leader"]): # Confirm piece is a bishop & the leader of its corp
+            if self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Attacks/Captures/Full Movement
+                in_range = [pos for pos in base_list if str(self.board.get(pos))[0] == enemy]
+                
+                first_iter_moves = [pos for pos in base_list if pos not in self.board]
+                second_iter_moves = []
+                third_iter_moves = []
+                for pos in first_iter_moves:
+                    sublist = getAdjSquares(pos, True)
+                    for pos in sublist:
+                        if pos not in self.board:
+                            second_iter_moves.append(pos)
+                for pos in second_iter_moves:
+                    sublist = getAdjSquares(pos, True)
+                    for pos in sublist:
+                        if pos not in self.board:
+                            third_iter_moves.append(pos)
+                movement = list(set(third_iter_moves))
+                
+                for pos in movement:
+                    adj_to_move = getAdjSquares(pos, True)
+                    enemies_adj_to_pos = [pos for pos in adj_to_move if str(self.board.get(pos))[0] == enemy]
+                    if len(enemies_adj_to_pos) > 0:
+                        setup.append(pos)
+                movement = [pos for pos in movement if pos not in setup]
+            else: # Commander's Movement
+                for pos in base_list:
+                    if pos not in self.board:
+                        movement.append(pos)
+        
+        return (list(set(in_range)), list(set(setup)), list(set(movement)))
     
     def getValidKnightMoveset(self, selected):
         selected_color = selected.getColor()
@@ -774,7 +828,7 @@ def getAdjSquares(pos, diag):
         if row == 8: # Top edge minus corners
             adj = [f"{chr(col_int+1)}8", f"{chr(col_int-1)}8", f"{chr(col_int)}7"] if not diag else [f"{chr(col_int+1)}8", f"{chr(col_int-1)}8", f"{chr(col_int)}7", f"{chr(col_int+1)}7", f"{chr(col_int-1)}7"]
         if row == 1: # Bot edge minus corners
-            adj = [f"{chr(col_int+1)}1", f"{chr(col_int-1)}1", f"{chr(col_int)}2"] if not diag else [f"{chr(col_int+1)}1", f"{chr(col_int-1)}1", f"{chr(col_int)}2", f"{chr(col_int+2)}7", f"{chr(col_int-1)}2"]
+            adj = [f"{chr(col_int+1)}1", f"{chr(col_int-1)}1", f"{chr(col_int)}2"] if not diag else [f"{chr(col_int+1)}1", f"{chr(col_int-1)}1", f"{chr(col_int)}2", f"{chr(col_int+1)}2", f"{chr(col_int-1)}2"]
     
     if ((pos not in edges) and (pos not in corners)):
         adj = [f"{chr(col_int)}{str(row+1)}", f"{chr(col_int)}{str(row-1)}", f"{chr(col_int+1)}{str(row)}", f"{chr(col_int-1)}{str(row)}"] if not diag else [f"{chr(col_int)}{str(row+1)}", f"{chr(col_int)}{str(row-1)}", f"{chr(col_int+1)}{str(row+1)}", f"{chr(col_int-1)}{str(row-1)}", f"{chr(col_int+1)}{str(row)}", f"{chr(col_int-1)}{str(row)}", f"{chr(col_int+1)}{str(row-1)}", f"{chr(col_int-1)}{str(row+1)}"]
