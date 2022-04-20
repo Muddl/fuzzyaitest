@@ -531,6 +531,7 @@ socket.onmessage = (message) => {
         local_corplist = data.corpList;
         local_boardstate = data.new_boardstate;
         local_whiteMove = data.whiteMove;
+        local_readyToBlitz = data.readyToBlitz;
         
         board.position(data.new_boardstate);
 
@@ -543,6 +544,7 @@ socket.onmessage = (message) => {
         local_corplist = data.corpList;
         local_boardstate = data.new_boardstate;
         local_whiteMove = data.whiteMove;
+        local_readyToBlitz = data.readyToBlitz;
         
         resolveAttack(data);
 
@@ -560,9 +562,6 @@ socket.onmessage = (message) => {
     else if(data.actionType=="AI_TURN_RES") {
         local_ai_action_list = data.black_actions;
         local_ai_move_list = data.black_moves;
-
-        console.log(local_ai_action_list[0].activePiece.rank);
-        console.log(local_ai_move_list);
 
         for (let i = 0; i < 3; i++) {
             if (local_ai_move_list[i] != null && local_ai_action_list[i].activePiece.rank != 'R') {

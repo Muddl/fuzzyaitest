@@ -3,8 +3,7 @@
 # We also were roughly following the sprint cycle chart given in the first week's presentation.
 # Next in progress for engine: Add knight blitzes, end states, timers, and a hook for the AI to latch into.
 from typing import Dict
-import random, re
-from enum import Enum
+import random, re, sys, os
 
 # Constants
 INITIAL_BOARDSTATE = {
@@ -300,7 +299,7 @@ class Boardstate:
         
         self.whiteMove = whiteMove  # Keeps track of whose turn it is
         
-        self.kingDead = 0 # Initially no kings dead  
+        self.kingDead = None # Initially no kings dead  
         self.readyToBlitz = readyToBlitz  # Stores the traits of knights ready to blitz
         self.gameHistory = []  # Keeps a history of the actions in a game.
         
@@ -315,104 +314,154 @@ class Boardstate:
             targetPos = parsedAction["targetPiece"]["pos"]
             friendly = 'w' if self.whiteMove else 'b'
             
+            try:
             # GetValidMoveset
-            (in_range, setup, movement) = self.getValidMoveset(Piece(activeColor, activeRank, activePos, activeCorp))
+                (in_range, setup, movement) = self.getValidMoveset(Piece(activeColor, activeRank, activePos, activeCorp))
             
-            # processMovement
-            if activePos in self.board: # Selected tile must contain a piece on the board
-                if targetPos in movement or targetPos in setup:  # If the square is in the piece's movement or setup set [empty targetPos]
-                    # Move piece in engine local board b/c previously validated
-                    curPiece = self.board.pop(activePos)
-                    self.board[targetPos] = curPiece
-                    
-                    # Set corp's action to zero, change corp data to reflect move
-                    self.corpLists[friendly][activeCorp]["command_authority_remaining"] = 0
-                    if activeRank == "B" or activeRank == "K":
-                        self.corpLists[friendly][activeCorp]["leader"]["pos"] = targetPos
-                    else:
-                        for piece in self.corpLists[friendly][activeCorp]["under_command"]:
-                            if piece["pos"] == activePos:
-                                piece["pos"] = targetPos
-
-                    if (activeRank == "N"): # Add knight to moved
-                        self.readyToBlitz.append(targetPos)
-                    
-                    turnend = True
-                    if self.corpLists[friendly]["kingCorp"]["command_authority_remaining"] == 1:
-                        turnend = False
-                    elif self.corpLists[friendly]["leftBishopCorp"]["command_authority_remaining"] == 1:
-                        turnend = False
-                    elif self.corpLists[friendly]["rightBishopCorp"]["command_authority_remaining"] == 1:
-                        turnend = False
-                    
-                    if turnend:
-                        self.corpLists[friendly]["kingCorp"]["command_authority_remaining"] = 1
-                        self.corpLists[friendly]["leftBishopCorp"]["command_authority_remaining"] = 1
-                        self.corpLists[friendly]["rightBishopCorp"]["command_authority_remaining"] = 1
-                        self.whiteMove = not self.whiteMove  # Swaps players.
-
-                        self.readyToBlitz = []
+                # processMovement
+                if activePos in self.board: # Selected tile must contain a piece on the board
+                    if targetPos in movement or targetPos in setup:  # If the square is in the piece's movement or setup set [empty targetPos]
+                        # Move piece in engine local board b/c previously validated
+                        curPiece = self.board.pop(activePos)
+                        self.board[targetPos] = curPiece
                         
-                    self.gameHistory.append(parsedAction)  # Adds the action to the game history
-                    
-                    if (activeRank == "N"):
+                        # Set corp's action to zero, change corp data to reflect move
+                        self.corpLists[friendly][activeCorp]["command_authority_remaining"] = 0
+                        if activeRank == "B" or activeRank == "K":
+                            self.corpLists[friendly][activeCorp]["leader"]["pos"] = targetPos
+                        else:
+                            for piece in self.corpLists[friendly][activeCorp]["under_command"]:
+                                if piece["pos"] == activePos:
+                                    piece["pos"] = targetPos
+
+                        if (activeRank == "N"): # Add knight to moved
+                            self.readyToBlitz.append(targetPos)
+                        
+                        # Check for any remaining actions
+                        turnend = True
+                        for corp in self.corpLists[friendly]:
+                            if self.corpLists[friendly][corp]["command_authority_remaining"] == 1:
+                                turnend = False
+                        
+                        if turnend:
+                            for corp in self.corpLists[friendly]:
+                                self.corpLists[friendly][corp]["command_authority_remaining"] = 1
+                            self.whiteMove = not self.whiteMove  # Swaps players.
+                            self.readyToBlitz = []
+                            
+                        self.gameHistory.append(parsedAction)  # Adds the action to the game history
+                        
                         return True, self.board, self.corpLists, self.whiteMove, self.readyToBlitz
                     else:
-                        return True, self.board, self.corpLists, self.whiteMove
+                        return False, None
                 else:
                     return False, None
-            else:
-                return False, None
+            except BaseException as err:
+                print(
+                    type(err).__name__,          # TypeError
+                    __file__,                  # /tmp/example.py
+                    err.__traceback__.tb_lineno  # 2
+                )
+                raise
                     
         elif (parsedAction["actionType"] == "ATTACK_ATTEMPT"):
             activePos = parsedAction["activePiece"]["pos"]
             activeColor = parsedAction["activePiece"]["color"]
             activeRank = parsedAction["activePiece"]["rank"]
             activeCorp = parsedAction["activePiece"]["corp"]
-            
             targetPos = parsedAction["targetPiece"]["pos"]
             targetRank = parsedAction["targetPiece"]["rank"]
+            targetCorp = parsedAction["targetPiece"]["corp"]
+            friendly = 'w' if self.whiteMove else 'b'
+            enemy = 'b' if self.whiteMove else 'w'
             
-            (in_range, setup, movement) = self.getValidMoveset(Piece(activeColor, activeRank, activePos, activeCorp))
+            try:
+                (in_range, setup, movement) = self.getValidMoveset(Piece(activeColor, activeRank, activePos, activeCorp))
             
-            if activePos in self.board: # Selected tile must contain a piece on the board
-                if targetPos in enem_spaces:
-                    if activeRank == "N" and parsedAction["blitz"]: # Check for blitz flag
-                        if ((activePos not in self.knightsAttacked) and (targetPos in self.blitzableKnightSquares)): # Check for valid blitz parameters
-                            (outcome, roll_val) = self.attackResolver(activeRank, targetRank, True) # Blitz outcome
-                            self.knightsAttacked = targetPos
-                            self.blitzableKnightSquares = []
+                if activePos in self.board: # Selected tile must contain a piece on the board
+                    if targetPos in in_range:
+                            # Roll for outcome of attack
+                            if activeRank == "N" and targetPos in self.readyToBlitz: 
+                                (outcome, roll_val) = self.attackResolver(activeRank, targetRank, True) # Blitz outcome
+                                isBlitz = True
+                            else:
+                                (outcome, roll_val) = self.attackResolver(activeRank, targetRank, False) # Normal combat outcome
+                                isBlitz = False
+                            
+                            # If an blitzing knight fails its attack, remove the ability to repeat the blitz
+                            if not outcome and isBlitz and targetPos in self.readyToBlitz:
+                                self.readyToBlitz.pop(targetPos)
+                            
+                            # Remove successfully attacked pieces from the boardstate
+                            if outcome and activeRank != "R": # On successful capture
+                                curPiece = self.board.pop(activePos)  # Sets the square that the piece is on to empty (the piece is "lifted" from the table)
+                                self.board[targetPos] = curPiece  # "Places" the piece onto that square
+                            elif outcome and activeRank == "R":
+                                self.board.pop(targetPos)
+                            
+                            # Update corpList to reflect boardstate changes
+                            # Remove successfully attacked pieces from the corpList & delegate under_command as needed
+                            if outcome:
+                                if activeRank in ["K", "B"]:
+                                    self.corpLists[friendly][activeCorp]["leader"]["pos"] = targetPos
+                                else:
+                                    for index, piece in enumerate(self.corpLists[friendly][activeCorp]["under_command"]):
+                                        if piece == parsedAction["activePiece"]:
+                                            self.corpLists[friendly][activeCorp]["under_command"][index]["pos"] = targetPos
+                                
+                                if targetRank == "K":
+                                    self.corpLists[enemy].pop(targetCorp)
+                                elif targetRank == "B":
+                                    to_be_delegated = []
+                                    for piece in self.corpLists[enemy][targetCorp]["under_command"]:
+                                        piece["corp"] = "kingCorp"
+                                        to_be_delegated.append(piece)
+                                    self.corpLists[enemy].pop(targetCorp)
+                                    self.corpLists[enemy]["kingCorp"]["under_command"] = self.corpLists[enemy]["kingCorp"]["under_command"] + to_be_delegated
+                                else:
+                                    for index, piece in enumerate(self.corpLists[enemy][targetCorp]["under_command"]):
+                                        if piece == parsedAction["targetPiece"]:
+                                            print("Removing successfully defeated piece pos from corpList")
+                                            del self.corpLists[enemy][targetCorp]["under_command"][index]
+                            
+                            # Set command_authority_remaining to 0
+                            self.corpLists[friendly][activeCorp]["command_authority_remaining"] = 0
+                            
+                            # Check for any remaining actions
+                            turnend = True
+                            for corp in self.corpLists[friendly]:
+                                if self.corpLists[friendly][corp]["command_authority_remaining"] == 1:
+                                    turnend = False
+                            
+                            # Process the end of a turn
+                            if turnend:
+                                for corp in self.corpLists[friendly]:
+                                    self.corpLists[friendly][corp]["command_authority_remaining"] = 1
+                                self.whiteMove = not self.whiteMove  # Swaps players.
+                                self.readyToBlitz = []
+                            
+                            self.gameHistory.append(parsedAction)  # Adds the action to the game history
+                            
+                            # Endgame check
+                            isEndGame = False
+                            if (outcome and targetRank == "K" and "kingCorp" not in self.corpLists[enemy]): # Game over?
+                                self.kingDead = activeColor # Set to proper color
+                                isEndGame = True
+                            
+                            return True, outcome, self.board, roll_val, self.corpLists, self.whiteMove, isBlitz, self.readyToBlitz, isEndGame, self.kingDead
                     else:
-                        (outcome, roll_val) = self.attackResolver(activeRank, targetRank, False) # Normal combat outcome
-                    
-                    if outcome and activeRank != "R": # On successful capture
-                        curPiece = self.board.pop(activePos)  # Sets the square that the piece is on to empty (the piece is "lifted" from the table)
-                        self.board[targetPos] = curPiece  # "Places" the piece onto that square
-                    elif outcome and activeRank == "R":
-                        self.board.pop(targetPos)
-                    
-                    # Cleanup
-                    self.actionCounter = self.actionCounter + 1
-                    # Post combat check
-                    if (outcome and targetRank == "K"): # Game over?
-                        self.kingDead = WinFlag(1) if activeColor == "w" else WinFlag(2) # Set to proper color
-                    if self.actionCounter == 3:
-                        self.actionCounter = 0
-                        self.whiteMove = not self.whiteMove  # Swaps players.
-                        self.knightsAttacked = []
-                        self.altKnightSquares = {}
-                    self.gameHistory.append(parsedAction)  # Adds the action to the game history
-                    
-                    if activeRank == "N" and parsedAction["blitz"]:
-                        return True, outcome, self.board, roll_val, self.actionCounter, self.whiteMove, parsedAction["blitz"]
-                    else:
-                        return True, outcome, self.board, roll_val, self.actionCounter, self.whiteMove
+                        print("failed targetPos in in_range")
+                        return False, False, None, -1, False
                 else:
-                    print("failed targetPos in enem_spaces")
+                    print("failed activePos in self.board")
                     return False, False, None, -1, False
-            else:
-                print("failed activePos in self.board")
-                return False, False, None, -1, False
+            except BaseException as err:
+                print(
+                    type(err).__name__,          # TypeError
+                    __file__,                  # /tmp/example.py
+                    err.__traceback__.tb_lineno  # 2
+                )
+                raise
                     
         elif (parsedAction["actionType"] == "HIGHLIGHT"):
             activePos = parsedAction["activePiece"]["pos"]
