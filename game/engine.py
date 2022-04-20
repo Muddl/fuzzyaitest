@@ -1351,7 +1351,10 @@ class Boardstate:
         movement = []
         
         base_list = getAdjSquares(selectedPos, True) # Base surrounding adjacent squares for current pawn position
+<<<<<<< HEAD
         
+=======
+>>>>>>> 6804078fbb8a1a8518cffc6a427e9efac19bc8c3
         if (selected.getTraits() == self.corpLists[friendly][selectedCorp]["leader"]): # Confirm piece is a bishop & the leader of its corp
             if self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Attacks/Captures/Full Movement
                 max_bishop_range = [

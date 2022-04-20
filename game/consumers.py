@@ -95,7 +95,9 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         
         board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList)
         
-        isValidAction, new_boardstate, corpList, whiteMove = board.processAction(payload)
+        isValidAction, new_boardstate, new_corpList, new_whiteMove = board.processAction(payload)
+        
+        print(new_corpList)
         
         if isValidAction:
             await self.channel_layer.group_send(
@@ -106,8 +108,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                     "activePiece": payload["activePiece"],
                     "targetPiece": payload["targetPiece"],
                     "new_boardstate": new_boardstate,
-                    "whiteMove": whiteMove,
-                    "corpList": corpList,
+                    "new_whiteMove": new_whiteMove,
+                    "new_corpList": new_corpList,
                     'sender_channel_name': self.channel_name
                 }
             )
@@ -122,14 +124,14 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             "activePiece": event["activePiece"],
             "targetPiece": event["targetPiece"],
             "new_boardstate": event["new_boardstate"],
-            "whiteMove": event["whiteMove"],
-            "corpList": event["corpList"],
+            "whiteMove": event["new_whiteMove"],
+            "corpList": event["new_corpList"],
             # "pgn": event["pgn"],
         })
         print(f"{event['sender_channel_name']}\t-\tSending New-Move")
         
         # Call update(baordstate, pgn) handler to manage DB persistence
-        await self.update(event["new_boardstate"], event["corpList"], event["whiteMove"]) #,event["pgn"])
+        await self.update(event["new_boardstate"], event["new_corpList"], event["new_whiteMove"]) #,event["pgn"])
     
     # Helper function called when a new-move command is recieved, broadcasts move.new event to group, handled in move_new
     async def attack_attempt(self, payload):
@@ -311,26 +313,31 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     
     # Called on recieved request from front-end for an AI turn
     async def ai_turn_req(self, payload):
-        if (payload["whiteMove"] == False and payload["actionCount"] < 3 and payload["isAIGame"]):
+        actionsRemain = False
+        for corp in payload["corpList"]["b"]:
+            if corp["command_authority_remaining"] == 1:
+                actionsRemain = True
+        
+        if (payload["whiteMove"] == False and actionsRemain and payload["isAIGame"]):
             black_actions = [None, None, None]
             black_moves = [None, None, None]
             for index in range(payload["actionCount"], len(black_actions)):
-                currentBoardstate, currentWhiteMove, currentActionCounter = await self.get_boardstate()
+                currentBoardstate, currentWhiteMove, currentCorpList = await self.get_boardstate()
                 
-                AIAction = produceAction(currentBoardstate, currentWhiteMove, currentActionCounter)
+                AIAction = produceAction(currentBoardstate, currentWhiteMove, currentCorpList)
                 print(AIAction)
                 
-                board = Boardstate(boardstate=currentBoardstate, whiteMove=currentWhiteMove, actionCounter=currentActionCounter)
+                board = Boardstate(boardstate=currentBoardstate, whiteMove=currentWhiteMove, corpList=currentCorpList)
                 
                 match AIAction["actionType"]:
                     case "MOVEMENT":
                         print("AI decided to move")
-                        isValidAction, new_boardstate, actionCount, whiteMove = board.processAction(AIAction)
+                        isValidAction, new_boardstate, corpList, whiteMove = board.processAction(AIAction)
                         
                         if isValidAction:
                             black_actions[index] = AIAction
                             black_moves[index] = AIAction["activePiece"]["pos"] + "-" + AIAction["targetPiece"]["pos"]
-                            await self.update(new_boardstate, actionCount, whiteMove)
+                            await self.update(new_boardstate, corpList, whiteMove)
                         else:
                             print(AIAction)
                             print(f"{self.channel_name}\t-\tInvalid AI Movement on action {index}")
