@@ -24,5 +24,6 @@ class Game(models.Model):
     status = models.IntegerField(default=1,choices=CHOICES)
     whitemove = models.BooleanField(default=True)
     corplist = models.JSONField(default=newcorplist)
-    white_captured = ArrayField(models.CharField(max_length=1, blank=True), size=10, null=True)
-    black_captured = ArrayField(models.CharField(max_length=1, blank=True), size=10, null=True)
+    readytoblitz = ArrayField(models.CharField(max_length=2, blank=True), size=2, default=[])
+    white_captured = ArrayField(models.CharField(max_length=1, blank=True), size=10, default=[])
+    black_captured = ArrayField(models.CharField(max_length=1, blank=True), size=10, default=[])

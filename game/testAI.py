@@ -1,4 +1,4 @@
-from engine import *
+from game.engine import *
 import pandas as pd
 import warnings
 import string

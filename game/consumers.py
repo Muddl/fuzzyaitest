@@ -47,7 +47,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 "whiteMove": data[3],
                 "corplist": data[4],
                 "white_captured": data[5],
-                "black_captured": data[6]
+                "black_captured": data[6],
+                "readyToBlitz": data[7]
             })
             print(f"Sending JOIN for AI Game")
     
@@ -70,7 +71,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         
             game.save()
             
-            return [True, game.boardstate, game.level, game.whitemove, game.corplist, game.white_captured, game.black_captured]
+            return [True, game.boardstate, game.level, game.whitemove, game.corplist, game.white_captured, game.black_captured, game.readytoblitz]
     
     async def receive_json(self, content):
         # Grab actionType & isAIGame
@@ -91,53 +92,86 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     
      # Helper function called when a new-move command is recieved, broadcasts move.new event to group, handled in move_new
     async def new_move(self, payload):
-        boardstate, whiteMove, corpList = await self.get_boardstate()
+        boardstate, whiteMove, corpList, readyToBlitz = await self.get_boardstate()
         
-        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList)
+        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList, readyToBlitz=readyToBlitz)
         
-        isValidAction, new_boardstate, new_corpList, new_whiteMove = board.processAction(payload)
-        
-        print(new_corpList)
+        if (payload["activePiece"]["rank"] == "N"):
+            isValidAction, new_boardstate, new_corpList, new_whiteMove, readyToBlitz = board.processAction(payload)
+        else:
+            isValidAction, new_boardstate, new_corpList, new_whiteMove = board.processAction(payload)
         
         if isValidAction:
-            await self.channel_layer.group_send(
-                str(self.game_id),
-                {
-                    "type": "move.new",
-                    "actionType": payload["actionType"],
-                    "activePiece": payload["activePiece"],
-                    "targetPiece": payload["targetPiece"],
-                    "new_boardstate": new_boardstate,
-                    "new_whiteMove": new_whiteMove,
-                    "new_corpList": new_corpList,
-                    'sender_channel_name': self.channel_name
-                }
-            )
+            if (payload["activePiece"]["rank"] == "N"):
+                await self.channel_layer.group_send(
+                    str(self.game_id),
+                    {
+                        "type": "move.new",
+                        "actionType": payload["actionType"],
+                        "activePiece": payload["activePiece"],
+                        "targetPiece": payload["targetPiece"],
+                        "new_boardstate": new_boardstate,
+                        "new_whiteMove": new_whiteMove,
+                        "new_corpList": new_corpList,
+                        "readyToBlitz": readyToBlitz,
+                        'sender_channel_name': self.channel_name
+                    }
+                )
+            else:
+                await self.channel_layer.group_send(
+                    str(self.game_id),
+                    {
+                        "type": "move.new",
+                        "actionType": payload["actionType"],
+                        "activePiece": payload["activePiece"],
+                        "targetPiece": payload["targetPiece"],
+                        "new_boardstate": new_boardstate,
+                        "new_whiteMove": new_whiteMove,
+                        "new_corpList": new_corpList,
+                        'sender_channel_name': self.channel_name
+                    }
+                )
             print(f"{self.channel_name}\t-\tValidated New-Move")
         else:
             print(f"{self.channel_name}\t-\tFailed to validate New-Move")
     
     # Pair handler of new_move(), recieves the event broadcast request & sends relevent message
     async def move_new(self, event):
-        await self.send_json({
-            "actionType": "MOVEMENT",
-            "activePiece": event["activePiece"],
-            "targetPiece": event["targetPiece"],
-            "new_boardstate": event["new_boardstate"],
-            "whiteMove": event["new_whiteMove"],
-            "corpList": event["new_corpList"],
-            # "pgn": event["pgn"],
-        })
-        print(f"{event['sender_channel_name']}\t-\tSending New-Move")
-        
-        # Call update(baordstate, pgn) handler to manage DB persistence
-        await self.update(event["new_boardstate"], event["new_corpList"], event["new_whiteMove"]) #,event["pgn"])
+        if ("readyToBlitz" in event):
+            await self.send_json({
+                "actionType": "MOVEMENT",
+                "activePiece": event["activePiece"],
+                "targetPiece": event["targetPiece"],
+                "new_boardstate": event["new_boardstate"],
+                "whiteMove": event["new_whiteMove"],
+                "corpList": event["new_corpList"],
+                "readyToBlitz": event["readyToBlitz"]
+                # "pgn": event["pgn"],
+            })
+            print(f"{event['sender_channel_name']}\t-\tSending New-Move")
+            
+            # Call update()
+            await self.updateWithBlitzState(event["new_boardstate"], event["new_corpList"], event["new_whiteMove"], event["readyToBlitz"]) #,event["pgn"])
+        else:
+            await self.send_json({
+                "actionType": "MOVEMENT",
+                "activePiece": event["activePiece"],
+                "targetPiece": event["targetPiece"],
+                "new_boardstate": event["new_boardstate"],
+                "whiteMove": event["new_whiteMove"],
+                "corpList": event["new_corpList"]
+                # "pgn": event["pgn"],
+            })
+            print(f"{event['sender_channel_name']}\t-\tSending New-Move")
+            
+            # Call update()
+            await self.update(event["new_boardstate"], event["new_corpList"], event["new_whiteMove"]) #,event["pgn"])
     
     # Helper function called when a new-move command is recieved, broadcasts move.new event to group, handled in move_new
     async def attack_attempt(self, payload):
-        boardstate, whiteMove, actionCounter = await self.get_boardstate()
+        boardstate, whiteMove, corpList, readyToBlitz = await self.get_boardstate()
         
-        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, actionCounter=actionCounter)
+        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList, readyToBlitz=readyToBlitz)
         
         if (payload["activePiece"]["rank"] == "N" and payload["blitz"]):
             isValidAction, isSuccessfulAttack, new_boardstate, roll_val, actionCount, whiteMove, blitz = board.processAction(payload)
@@ -278,9 +312,9 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         await self.update(event["new_boardstate"], event["actionCount"], event["whiteMove"]) #,event["pgn"])
         
     async def highlight(self, payload):
-        boardstate, whiteMove, corpList = await self.get_boardstate()
+        boardstate, whiteMove, corpList, readyToBlitz = await self.get_boardstate()
         
-        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList)
+        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList, readyToBlitz=readyToBlitz)
         
         isValidAction, in_range, setup, movement = board.processAction(payload)
         
@@ -428,9 +462,30 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         print("Saving game details")
         game.save()
         print("Successfully saved")
+    
+    # Called after every move_new & attempt_action JSON is sent to persist gamestate to DB
+    @database_sync_to_async
+    def updateWithBlitzState(self, new_boardstate, corplist, whiteMove, readyToBlitz): # , pgn):
+        # Find current game, toss update if doesn't exist for some reason
+        game = Game.objects.all().filter(id=self.game_id)[0]
+        if not game:
+            print("DB update failed, game not found")
+            return
+        
+        # Replace existing boardstate & PGN with updated version
+        game.boardstate = new_boardstate
+        game.corplist = corplist
+        game.whitemove = whiteMove
+        game.readytoblitz = readyToBlitz
+        # game.pgn = pgn
+        
+        # Persist transaction
+        print("Saving game details")
+        game.save()
+        print("Successfully saved")
 
     # Helper function to grab the current boardstate from the DB
     @database_sync_to_async
     def get_boardstate(self):
         game = Game.objects.all().filter(id=self.game_id)[0]
-        return game.boardstate, game.whitemove, game.corplist
+        return game.boardstate, game.whitemove, game.corplist, game.readytoblitz
