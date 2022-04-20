@@ -269,11 +269,15 @@ class Piece:
         return self.pos
     
     def getTraits(self):
-        return f"color:{self.color},rank:{self.rank},corp:{self.corp},pos:{self.pos}"
+        return eval(f"{{ 'pos': '{self.pos}', 'color': '{self.color}', 'rank': '{self.rank}', 'corp': '{self.corp}' }}")
     
     def __eq__(self, other):
         if isinstance(other, Piece):
             return self.getTraits() == other.getTraits()
+    def __repr__(self):
+        return f"{{ pos: {self.pos}, color: {self.color}, rank: {self.rank}, corp: {self.corp} }}"
+
+
 
 class Boardstate:
     # Initializes an empty board and game in code (not gui)
@@ -284,8 +288,10 @@ class Boardstate:
         
         self.board = boardstate # Board representation in Position Obj notation
         
-        self.corpLists = self.parseCorpList(corpList)  # Contains the current state of corps & available actions for each
-        
+        #self.corpLists = self.parseCorpList(corpList)  # Contains the current state of corps & available actions for each
+        self.corpLists = corpList
+
+
         self.attackDict = {
             "K": {"K": 4, "Q": 4, "N": 4, "B": 4, "R": 5, "P": 1},
             "Q": {"K": 4, "Q": 4, "N": 4, "B": 4, "R": 5, "P": 2},
@@ -302,71 +308,71 @@ class Boardstate:
         self.blitzableKnightSquares = []  # Stores the possible squares a knight could blitz from.
         self.gameHistory = []  # Keeps a history of the actions in a game.
     
-    def parseCorpList(self, corpList):
-        white_corp_list = {}
-        black_corp_list = {}
+    # def parseCorpList(self, corpList):
+    #     white_corp_list = {}
+    #     black_corp_list = {}
         
-        dict_corp_list = corpList
+    #     dict_corp_list = corpList
         
-        if ("whiteCorps" in dict_corp_list):
-            if ("leftBishopCorp" in dict_corp_list["whiteCorps"]):
-                dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"] = Piece(dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"]["color"], dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"]["rank"], dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"]["pos"], dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"]["corp"])
-                new_under_command = []
-                for piece in dict_corp_list["whiteCorps"]["leftBishopCorp"]["under_command"]:
-                    formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
-                    new_under_command.append(formatted_piece)
-                dict_corp_list["whiteCorps"]["leftBishopCorp"]["under_command"] = new_under_command
-                white_corp_list["leftBishopCorp"] = dict_corp_list["whiteCorps"]["leftBishopCorp"]
+    #     if ("whiteCorps" in dict_corp_list):
+    #         if ("leftBishopCorp" in dict_corp_list["whiteCorps"]):
+    #             dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"] = Piece(dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"]["color"], dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"]["rank"], dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"]["pos"], dict_corp_list["whiteCorps"]["leftBishopCorp"]["leader"]["corp"])
+    #             new_under_command = []
+    #             for piece in dict_corp_list["whiteCorps"]["leftBishopCorp"]["under_command"]:
+    #                 formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
+    #                 new_under_command.append(formatted_piece)
+    #             dict_corp_list["whiteCorps"]["leftBishopCorp"]["under_command"] = new_under_command
+    #             white_corp_list["leftBishopCorp"] = dict_corp_list["whiteCorps"]["leftBishopCorp"]
                 
-            if ("rightBishopCorp" in dict_corp_list["whiteCorps"]):
-                dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"] = Piece(dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"]["color"], dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"]["rank"], dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"]["pos"], dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"]["corp"])
-                new_under_command = []
-                for piece in dict_corp_list["whiteCorps"]["rightBishopCorp"]["under_command"]:
-                    formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
-                    new_under_command.append(formatted_piece)
-                dict_corp_list["whiteCorps"]["rightBishopCorp"]["under_command"] = new_under_command
-                white_corp_list["rightBishopCorp"] = dict_corp_list["whiteCorps"]["rightBishopCorp"]
+    #         if ("rightBishopCorp" in dict_corp_list["whiteCorps"]):
+    #             dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"] = Piece(dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"]["color"], dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"]["rank"], dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"]["pos"], dict_corp_list["whiteCorps"]["rightBishopCorp"]["leader"]["corp"])
+    #             new_under_command = []
+    #             for piece in dict_corp_list["whiteCorps"]["rightBishopCorp"]["under_command"]:
+    #                 formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
+    #                 new_under_command.append(formatted_piece)
+    #             dict_corp_list["whiteCorps"]["rightBishopCorp"]["under_command"] = new_under_command
+    #             white_corp_list["rightBishopCorp"] = dict_corp_list["whiteCorps"]["rightBishopCorp"]
                 
-            if ("kingCorp" in dict_corp_list["whiteCorps"]):
-                dict_corp_list["whiteCorps"]["kingCorp"]["leader"] = Piece(dict_corp_list["whiteCorps"]["kingCorp"]["leader"]["color"], dict_corp_list["whiteCorps"]["kingCorp"]["leader"]["rank"], dict_corp_list["whiteCorps"]["kingCorp"]["leader"]["pos"], dict_corp_list["whiteCorps"]["kingCorp"]["leader"]["corp"])
-                new_under_command = []
-                for piece in dict_corp_list["whiteCorps"]["kingCorp"]["under_command"]:
-                    formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
-                    new_under_command.append(formatted_piece)
-                dict_corp_list["whiteCorps"]["kingCorp"]["under_command"] = new_under_command
-                white_corp_list["kingCorp"] = dict_corp_list["whiteCorps"]["kingCorp"]
+    #         if ("kingCorp" in dict_corp_list["whiteCorps"]):
+    #             dict_corp_list["whiteCorps"]["kingCorp"]["leader"] = Piece(dict_corp_list["whiteCorps"]["kingCorp"]["leader"]["color"], dict_corp_list["whiteCorps"]["kingCorp"]["leader"]["rank"], dict_corp_list["whiteCorps"]["kingCorp"]["leader"]["pos"], dict_corp_list["whiteCorps"]["kingCorp"]["leader"]["corp"])
+    #             new_under_command = []
+    #             for piece in dict_corp_list["whiteCorps"]["kingCorp"]["under_command"]:
+    #                 formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
+    #                 new_under_command.append(formatted_piece)
+    #             dict_corp_list["whiteCorps"]["kingCorp"]["under_command"] = new_under_command
+    #             white_corp_list["kingCorp"] = dict_corp_list["whiteCorps"]["kingCorp"]
         
-        if ("blackCorps" in dict_corp_list):
-            if ("leftBishopCorp" in dict_corp_list["blackCorps"]):
-                dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"] = Piece(dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"]["color"], dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"]["rank"], dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"]["pos"], dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"]["corp"])
-                new_under_command = []
-                for piece in dict_corp_list["blackCorps"]["leftBishopCorp"]["under_command"]:
-                    formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
-                    new_under_command.append(formatted_piece)
-                dict_corp_list["blackCorps"]["leftBishopCorp"]["under_command"] = new_under_command
-                black_corp_list["leftBishopCorp"] = dict_corp_list["blackCorps"]["leftBishopCorp"]
+    #     if ("blackCorps" in dict_corp_list):
+    #         if ("leftBishopCorp" in dict_corp_list["blackCorps"]):
+    #             dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"] = Piece(dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"]["color"], dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"]["rank"], dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"]["pos"], dict_corp_list["blackCorps"]["leftBishopCorp"]["leader"]["corp"])
+    #             new_under_command = []
+    #             for piece in dict_corp_list["blackCorps"]["leftBishopCorp"]["under_command"]:
+    #                 formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
+    #                 new_under_command.append(formatted_piece)
+    #             dict_corp_list["blackCorps"]["leftBishopCorp"]["under_command"] = new_under_command
+    #             black_corp_list["leftBishopCorp"] = dict_corp_list["blackCorps"]["leftBishopCorp"]
                 
-            if ("rightBishopCorp" in dict_corp_list["blackCorps"]):
-                dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"] = Piece(dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"]["color"], dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"]["rank"], dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"]["pos"], dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"]["corp"])
-                new_under_command = []
-                for piece in dict_corp_list["blackCorps"]["rightBishopCorp"]["under_command"]:
-                    formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
-                    new_under_command.append(formatted_piece)
-                dict_corp_list["blackCorps"]["rightBishopCorp"]["under_command"] = new_under_command
-                black_corp_list["rightBishopCorp"] = dict_corp_list["blackCorps"]["rightBishopCorp"]
+    #         if ("rightBishopCorp" in dict_corp_list["blackCorps"]):
+    #             dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"] = Piece(dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"]["color"], dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"]["rank"], dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"]["pos"], dict_corp_list["blackCorps"]["rightBishopCorp"]["leader"]["corp"])
+    #             new_under_command = []
+    #             for piece in dict_corp_list["blackCorps"]["rightBishopCorp"]["under_command"]:
+    #                 formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
+    #                 new_under_command.append(formatted_piece)
+    #             dict_corp_list["blackCorps"]["rightBishopCorp"]["under_command"] = new_under_command
+    #             black_corp_list["rightBishopCorp"] = dict_corp_list["blackCorps"]["rightBishopCorp"]
                 
-            if ("kingCorp" in dict_corp_list["blackCorps"]):
-                dict_corp_list["blackCorps"]["kingCorp"]["leader"] = Piece(dict_corp_list["blackCorps"]["kingCorp"]["leader"]["color"], dict_corp_list["blackCorps"]["kingCorp"]["leader"]["rank"], dict_corp_list["blackCorps"]["kingCorp"]["leader"]["pos"], dict_corp_list["blackCorps"]["kingCorp"]["leader"]["corp"])
-                new_under_command = []
-                for piece in dict_corp_list["blackCorps"]["kingCorp"]["under_command"]:
-                    formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
-                    new_under_command.append(formatted_piece)
-                dict_corp_list["blackCorps"]["kingCorp"]["under_command"] = new_under_command
-                black_corp_list["kingCorp"] = dict_corp_list["blackCorps"]["kingCorp"]
+    #         if ("kingCorp" in dict_corp_list["blackCorps"]):
+    #             dict_corp_list["blackCorps"]["kingCorp"]["leader"] = Piece(dict_corp_list["blackCorps"]["kingCorp"]["leader"]["color"], dict_corp_list["blackCorps"]["kingCorp"]["leader"]["rank"], dict_corp_list["blackCorps"]["kingCorp"]["leader"]["pos"], dict_corp_list["blackCorps"]["kingCorp"]["leader"]["corp"])
+    #             new_under_command = []
+    #             for piece in dict_corp_list["blackCorps"]["kingCorp"]["under_command"]:
+    #                 formatted_piece = Piece(piece["color"], piece["rank"], piece["pos"], piece["corp"])
+    #                 new_under_command.append(formatted_piece)
+    #             dict_corp_list["blackCorps"]["kingCorp"]["under_command"] = new_under_command
+    #             black_corp_list["kingCorp"] = dict_corp_list["blackCorps"]["kingCorp"]
         
-        output_corps = {"w": white_corp_list, "b": black_corp_list}
+    #     output_corps = {"w": white_corp_list, "b": black_corp_list}
         
-        return output_corps
+    #     return output_corps
     
     # Function that moves the pieces, adds it to the game history, and swaps players - IMPORTANT
     def processAction(self, parsedAction):
@@ -511,7 +517,7 @@ class Boardstate:
         
         base_list = getAdjSquares(selectedPos, True) # Base surrounding adjacent squares for current pawn position
         
-        if (selected in self.corpLists[friendly][selectedCorp]["under_command"]) and self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Confirm we've been passed a pawn in the correct corp & actions remain
+        if (selected.getTraits() in self.corpLists[friendly][selectedCorp]["under_command"]) and self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Confirm we've been passed a pawn in the correct corp & actions remain
             if (self.whiteMove and selectedColor == "w"): # Relative forward movement to white play
                 for position in base_list:
                     if int(position[1]) > int(selectedPos[1]): # If space is relatively forward

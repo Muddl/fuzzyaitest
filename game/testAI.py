@@ -1,4 +1,4 @@
-from game.engine import *
+from engine import *
 import pandas as pd
 import warnings
 import string
@@ -114,10 +114,12 @@ current_turn_iteration = list_of_turns[0]
 
 # initial board state dimension
 dict_initial_board_state = {'a8': 'bR', 'b8': 'bN', 'c8': 'bB', 'd8': 'bQ', 'e8': 'bK', 'f8': 'bB', 'g8': 'bN',
-                            'h8': 'bR', 'a7': 'bP', 'b7': 'bP', 'c7': 'bP', 'd7': 'bP', 'e7': 'bP', 'f7': 'bP',
+                            'h8': 'bR', 'a7': 'bP',  'c7': 'bP', 'd7': 'bP', 'e7': 'bP', 'f7': 'bP',
                             'g7': 'bP', 'h7': 'bP', 'a2': 'wP', 'b2': 'wP', 'c2': 'wP', 'd2': 'wP', 'e2': 'wP',
                             'f2': 'wP', 'g2': 'wP', 'h2': 'wP', 'a1': 'wR', 'b1': 'wN', 'c1': 'wB', 'd1': 'wQ',
                             'e1': 'wK', 'f1': 'wB', 'g1': 'wN', 'h1': 'wR'}
+
+#b7: bp
 
 dict_test_board_state_1 = {
     "a8": "bR",
@@ -188,6 +190,644 @@ dict_test_board_state_2 = {
     "d7": "bB",
     "b8": "bR"
 }
+
+dict_test_board_state_3 = {
+    "a8": "bR",
+    "b8": "bN",
+    "c8": "bB",
+    "d8": "bQ",
+    "e8": "bK",
+    "f8": "bB",
+    "g8": "bN",
+    "h8": "bR",
+    "a7": "bP",
+    "b7": "bP",
+    "c7": "bP",
+    "d7": "bP",
+    "e7": "bP",
+    "f7": "bP",
+    "g7": "bP",
+    "h7": "bP",
+    "b2": "wP",
+    "c2": "wP",
+    "e2": "wP",
+    "f2": "wP",
+    "g2": "wP",
+    "h2": "wP",
+    "a1": "wR",
+    "b1": "wN",
+    "c1": "wB",
+    "d1": "wQ",
+    "e1": "wK",
+    "f1": "wB",
+    "g1": "wN",
+    "h1": "wR",
+    "a2": "wP",
+    "d6": "wP"
+}
+
+dict_test_board_state_4 = {
+    "a8": "bR",
+    "b8": "bN",
+    "c8": "bB",
+    "d8": "bQ",
+    "e8": "bK",
+    "f8": "bB",
+    "g8": "bN",
+    "h8": "bR",
+    "a7": "bP",
+    "b7": "bP",
+    "d7": "bP",
+    "e7": "bP",
+    "f7": "bP",
+    "g7": "bP",
+    "b2": "wP",
+    "c2": "wP",
+    "e2": "wP",
+    "f2": "wP",
+    "g2": "wP",
+    "h2": "wP",
+    "a1": "wR",
+    "b1": "wN",
+    "c1": "wB",
+    "d1": "wQ",
+    "e1": "wK",
+    "f1": "wB",
+    "g1": "wN",
+    "h1": "wR",
+    "a2": "wP",
+    "d2": "wP",
+    "h7": "bP",
+    "c6": "bP"
+}
+
+dict_test_pawn_board_state = {
+    "g7": "bP",
+    "f2": "wP",
+    "h2": "wP",
+    "a2": "wP",
+    "d4": "bP",
+    "e4": "wP",
+    "b4": "wP",
+    "c3": "wP",
+    "g4": "wP",
+    "d6": "bP",
+    "a7": "bP",
+    "b6": "bP",
+    "c5": "bP",
+    "f6": "bP",
+    "h6": "bP"
+}
+
+
+
+INITIAL_CORP_LIST_AI = {
+    "w": {
+        "kingCorp": {
+            "leader": {
+                "pos": "e1",
+                "color" : "w",
+                "rank" : "K",
+                "corp" : "kingCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "a1",
+                    "color" : "w",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "h1",
+                    "color" : "w",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "d1",
+                    "color" : "w",
+                    "rank" : "Q",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "d2", 
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "e2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        },
+        "leftBishopCorp": {
+            "leader": {
+                "pos": "c1",
+                "color" : "w",
+                "rank" : "B",
+                "corp" : "leftBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "a2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "b2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "c2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "b1",
+                    "color" : "w",
+                    "rank" : "N",
+                    "corp" : "leftBishopCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        },
+        "rightBishopCorp": {
+            "leader": {
+                "pos": "f1",
+                "color" : "w",
+                "rank" : "B",
+                "corp" : "rightBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "f2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "g2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "h2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "g1",
+                    "color" : "w",
+                    "rank" : "N",
+                    "corp" : "rightBishopCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        }
+    },
+    "b": {
+        "kingCorp": {
+            "leader": {
+                "pos": "e8",
+                "color" : "b",
+                "rank" : "K",
+                "corp" : "kingCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "a8",
+                    "color" : "b",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "h8",
+                    "color" : "b",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "d8",
+                    "color" : "b",
+                    "rank" : "Q",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "d7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "e7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                }
+            ],
+            "command_authority_remaining": 0
+        },
+        "leftBishopCorp": {
+            "leader": {
+                "pos": "c8",
+                "color" : "b",
+                "rank" : "B",
+                "corp" : "leftBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "a7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "", #HERE B7
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "c6",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "b8",
+                    "color" : "b",
+                    "rank" : "N",
+                    "corp" : "leftBishopCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        },
+        "rightBishopCorp": {
+            "leader": {
+                "pos": "f8",
+                "color" : "b",
+                "rank" : "B",
+                "corp" : "rightBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "f7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "g7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "h7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "g8",
+                    "color" : "b",
+                    "rank" : "N",
+                    "corp" : "rightBishopCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        }
+    }
+}
+
+PAWN_CORP_LIST_AI = {
+    "w": {
+        "kingCorp": {
+            "leader": {
+                "pos": "",
+                "color" : "w",
+                "rank" : "K",
+                "corp" : "kingCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "",
+                    "color" : "w",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "",
+                    "color" : "w",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "",
+                    "color" : "w",
+                    "rank" : "Q",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "", 
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "e4",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        },
+        "leftBishopCorp": {
+            "leader": {
+                "pos": "",
+                "color" : "w",
+                "rank" : "B",
+                "corp" : "leftBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "a2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "c3",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "",
+                    "color" : "w",
+                    "rank" : "N",
+                    "corp" : "leftBishopCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        },
+        "rightBishopCorp": {
+            "leader": {
+                "pos": "",
+                "color" : "w",
+                "rank" : "B",
+                "corp" : "rightBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "f2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "g4",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "h2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "",
+                    "color" : "w",
+                    "rank" : "N",
+                    "corp" : "rightBishopCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        }
+    },
+    "b": {
+        "kingCorp": {
+            "leader": {
+                "pos": "",
+                "color" : "b",
+                "rank" : "K",
+                "corp" : "kingCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "",
+                    "color" : "b",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "",
+                    "color" : "b",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "",
+                    "color" : "b",
+                    "rank" : "Q",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "d6",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "e5",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        },
+        "leftBishopCorp": {
+            "leader": {
+                "pos": "",
+                "color" : "b",
+                "rank" : "B",
+                "corp" : "leftBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "a7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "b6",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "b4",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "",
+                    "color" : "b",
+                    "rank" : "N",
+                    "corp" : "leftBishopCorp"
+                }
+            ],
+            "command_authority_remaining": 0
+        },
+        "rightBishopCorp": {
+            "leader": {
+                "pos": "",
+                "color" : "b",
+                "rank" : "B",
+                "corp" : "rightBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "f6",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "g7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "h6",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "",
+                    "color" : "b",
+                    "rank" : "N",
+                    "corp" : "rightBishopCorp"
+                }
+            ],
+            "command_authority_remaining": 0
+        }
+    }
+}
+
+
+def get_black_squares_available(json_dictionary):
+
+
+    black_corps = list(json_dictionary['b'].keys())
+    
+
+    black_list_of_squares_available = []
+
+    for corp in black_corps:
+        if json_dictionary['b'][corp]['command_authority_remaining'] == 1:
+            corps_available = json_dictionary['b'][corp]
+            leader_in_corp = list(corps_available.keys())[:1]
+            under_command_in_corp = list(corps_available.keys())[1:2]
+            for piece in leader_in_corp:
+                black_list_of_squares_available.append(corps_available[piece]['pos'])
+            for piece in under_command_in_corp:
+                under_command_list = corps_available[piece]
+            for piece in under_command_list:
+                black_list_of_squares_available.append(piece['pos'])
+
+    black_res = []
+    [black_res.append(x) for x in black_list_of_squares_available if x not in black_res]
+
+    return black_res
+
+def get_white_squares_available(json_dictionary):
+    white_corps = list(json_dictionary['w'].keys())
+    white_list_of_squares_available = []
+
+    for corp in white_corps:
+        if json_dictionary['w'][corp]['command_authority_remaining'] == 1:
+            corps_available = json_dictionary['w'][corp]
+            leader_in_corp = list(corps_available.keys())[:1]
+            under_command_in_corp = list(corps_available.keys())[1:2]
+            for piece in leader_in_corp:
+                white_list_of_squares_available.append(corps_available[piece]['pos'])
+            for piece in under_command_in_corp:
+                under_command_list = corps_available[piece]
+            for piece in under_command_list:
+                white_list_of_squares_available.append(piece['pos'])
+
+    white_res = []
+    [white_res.append(x) for x in white_list_of_squares_available if x not in white_res]
+
+    return white_res
+
+def get_black_corp(position, json_dictionary):
+
+
+    black_corps = list(json_dictionary['b'].keys())
+
+
+
+    corp_string = ''
+    for corp in black_corps:
+        corps_available = json_dictionary['b'][corp]
+        leader_in_corp = list(corps_available.keys())[:1]
+        under_command_in_corp = list(corps_available.keys())[1:2]
+        for pieces in leader_in_corp:
+            if corps_available[pieces]['pos'] == position:
+                corp_string = corps_available[pieces]['corp']
+        for pieces in under_command_in_corp:
+            under_command_list = corps_available[pieces]
+            for dictionary in under_command_list:
+                if dictionary['pos'] == position:
+                    corp_string = dictionary['corp']
+    return corp_string
+    
+    
+
+def get_white_corp(position, json_dictionary):
+
+    white_corps = list(json_dictionary['w'].keys())
+
+    corp_string = ''
+    for corp in white_corps:
+        corps_available = json_dictionary['w'][corp]
+        leader_in_corp = list(corps_available.keys())[:1]
+        under_command_in_corp = list(corps_available.keys())[1:2]
+        for piece in leader_in_corp:
+            if corps_available[piece]['pos'] == position:
+                corp_string = corps_available[piece]['corp']
+        for piece in under_command_in_corp:
+            under_command_list = corps_available[piece]
+            for dictionary in under_command_list:
+                if dictionary['pos'] == position:
+                    corp_string = dictionary['corp']
+    return corp_string
 
 def get_board_notation(coordinates):
     return str(
@@ -260,16 +900,43 @@ def get_movesets_per_board_state(board_state):
     return _df.sort_values(by=['capture_probability'], ascending=[False]) #HERE 
 
 
-def get_possible_moveset_per_piece(position, piece, team, board_state, whiteMove, actionCounter):
+def get_possible_moveset_per_piece(position, piece, team, board_state, whiteMove, corpList):
     if team == 'b':
-        board_state_obj = Boardstate(board_state, whiteMove, actionCounter)
+        available_squares = get_black_squares_available(corpList)
+        corp_string = get_black_corp(position,corpList)
+        board_state_obj = Boardstate(board_state, False, corpList)
+        
     else:
-        board_state_obj = Boardstate(board_state, whiteMove, actionCounter)
+        available_squares = get_white_squares_available(corpList)
+        corp_string = get_white_corp(position, corpList)
+        board_state_obj = Boardstate(board_state, True, corpList)
+
+
+    #print(available_squares)
+    current_piece_obj = Piece(team, piece.upper(), position, corp_string)
     
-    valid_moves = board_state_obj.getValidMoveset(Piece(team, piece.upper(), position))
-    move_list = [valid_moves[0] + valid_moves[1]][0]
-    
-    return move_list
+
+    if current_piece_obj.pos not in available_squares:
+        pass
+    else:
+        in_range, setup, movement = board_state_obj.getValidMoveset(current_piece_obj)
+        if len(in_range) != 0:
+            move_list = in_range
+        elif len(in_range) == 0 and len(setup) != 0:
+            move_list = setup
+        else:
+            move_list = movement
+        
+        print('Piece: ' + team + piece.upper() + ' at position: ' + position)
+        print('in range')
+        print(in_range)
+        print('setup')
+        print(setup)
+        print('movement')
+        print(movement)
+        print('move list')
+        print(move_list)
+        return(move_list)
 
 
 def parse_board_state(board_state, iteration, corps_list, initial_piece_reference, list_of_corps_assignments, whiteMove, actionCounter):
@@ -298,7 +965,11 @@ def parse_board_state(board_state, iteration, corps_list, initial_piece_referenc
             _team = _piece[0]
             _moveset = get_possible_moveset_per_piece(
                 _starting_position, _piece_type, _team, board_state, whiteMove, actionCounter)
-            _possible_moves = len(_moveset)
+            try:
+                _possible_moves = len(_moveset)
+            except:
+                _possible_moves = 0
+                pass
             # convert piece data into series
             _series = pd.Series([_pieceID, _piece, _piece_type, _team,
                                 _starting_position, _corps, _moveset, _possible_moves], index=df_converted_board_state.columns)
@@ -307,14 +978,21 @@ def parse_board_state(board_state, iteration, corps_list, initial_piece_referenc
                 _series, ignore_index=True)
 
     # find the current movesets and potential battles (along w/ probabilities)
+
     current_turn_movesets = get_movesets_per_board_state(
-        df_converted_board_state).head(1) 
+        df_converted_board_state)
     # print('moveset in function: ', current_turn_movesets)
 
     #new_board_state = generate_new_board_state(df_converted_board_state)
 
     #return new_board_state, current_turn_movesets
-    return current_turn_movesets
+    current_turn_movesets.dropna(inplace=True)
+    current_turn_movesets = current_turn_movesets.head(1)
+    print(current_turn_movesets)
+    return current_turn_movesets 
+
+
+
 
 def produceAction(boardstate, whiteMove, actionCounter):
     current_board_state = boardstate #set to board_state_from_frontend
@@ -326,7 +1004,6 @@ def produceAction(boardstate, whiteMove, actionCounter):
     i = 1
     while len(command_list) > 2:
         current_turn_movesets = parse_board_state(current_board_state, i, command_list, initial_piece_reference, list_of_corps_assignments, whiteMove, actionCounter)
-        print(current_turn_movesets)
         move_to_send = current_turn_movesets.iloc[0]['starting_position_attack'] + '-' + current_turn_movesets.iloc[0]['potential_position']
         moves_to_send.append(move_to_send)
         command_list.remove(current_turn_movesets.iloc[0][3])
@@ -383,4 +1060,13 @@ def produceAction(boardstate, whiteMove, actionCounter):
             'whiteMove': whiteMove
         }
 
-    return action_to_send
+    print(action_to_send)
+    #return action_to_send
+
+#produceAction(dict_test_board_state_4,False,INITIAL_CORP_LIST_AI)
+
+#produceAction(dict_test_pawn_board_state, False, PAWN_CORP_LIST_AI)
+
+#get_possible_moveset_per_piece('c8','B','b', INITIAL_BOARDSTATE, False, INITIAL_CORP_LIST_AI)
+
+#print(get_black_squares_available(INITIAL_CORP_LIST_AI))
