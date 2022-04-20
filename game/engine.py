@@ -336,7 +336,7 @@ class Boardstate:
 
                     if (activeRank == "N"): # Add knight to moved
                         self.readyToBlitz.append(targetPos)
-                        
+                    
                     turnend = True
                     if self.corpLists[friendly]["kingCorp"]["command_authority_remaining"] == 1:
                         turnend = False
@@ -350,6 +350,7 @@ class Boardstate:
                         self.corpLists[friendly]["leftBishopCorp"]["command_authority_remaining"] = 1
                         self.corpLists[friendly]["rightBishopCorp"]["command_authority_remaining"] = 1
                         self.whiteMove = not self.whiteMove  # Swaps players.
+
                         self.readyToBlitz = []
                         
                     self.gameHistory.append(parsedAction)  # Adds the action to the game history
@@ -636,7 +637,7 @@ class Boardstate:
         in_range = []
         setup = []
         movement = []
-
+        
         if (selected.getTraits() == self.corpLists[friendly][selectedCorp]["leader"]): # Confirm piece is a bishop & the leader of its corp
             if self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Attacks/Captures/Full Movement
                 in_range = [pos for pos in base_list if str(self.board.get(pos))[0] == enemy]
@@ -656,6 +657,7 @@ class Boardstate:
                     for pos in sublist:
                         if pos not in self.board:
                             third_iter_moves.append(pos)
+                movement = list(set(third_iter_moves))
                 movement = movement + third_iter_moves
                 movement = list(set(movement))
                 
