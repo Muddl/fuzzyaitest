@@ -321,15 +321,15 @@ const renderPieceListAnim = (white_captured, black_captured) => {
         PlayerCapturedPieces.push(eliminatedPiece);
         for (let count = PlayerCapturedPieces.length; count < PlayerCapturedPieces.length + 1; count++) {
             var imageElement = document.createElement('img');
-            imageElement.setAttribute('src', PlayerCapturedPieces[count-1]);
-            $own_pieces.append(imageElement).css("width",'25px');
+            imageElement.setAttribute('src', PlayerCapturedPieces[count-1]).setAttribute('style', 'width: 25px');
+            $own_pieces.append(imageElement);
         };
     } else {
         OppCapturedPieces.push(eliminatedPiece)
         for (let count = OppCapturedPieces.length; count < OppCapturedPieces.length + 1; count++) {
             var imageElement = document.createElement('img');
-            imageElement.setAttribute('src', OppCapturedPieces[count-1]);
-            $opp_pieces.append(imageElement).css("width",'25px');
+            imageElement.setAttribute('src', OppCapturedPieces[count-1]).setAttribute('style', 'width: 25px');
+            $opp_pieces.append(imageElement);
         };
     };
 };
