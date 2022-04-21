@@ -35,6 +35,7 @@
 
 {% block body %}
     <div id="main-container" class="container">
+        <!-- Opponent Captured Pieces -->
         <div class = "row">
             <div class="col" style = " max-height: 700px;">
                 <div id="white-captured-con" class="d-flex flex-row text-white">
@@ -43,7 +44,9 @@
             </div>
         </div>
 
+        <!-- Center Game Row -->
         <div class="row">
+            <!-- Roll Indicator -->
             <div class="col-sm border border-dark bg-white">
                 <p class="text-center fs-4">Attacking</p>
                 <img id="attacking-piece" src="{% static '/Chessboard/wB.png' %}" alt="attacking piece" style="width: 125px; visibility: hidden;" class="displayed rounded mx-auto d-block">
@@ -53,15 +56,16 @@
                 <p class="text-center fs-4">Defending</p>
             </div>
     
-            <!-- Captured Pieces by each side / if need to re-implement pull code from sticky note  -->
+            <!-- Game Board -->
             <div id="my_board" style="width: 650px"></div>
 
-            <!-- Move Log Column -->
+            <!-- Move Log -->
             <div id="move_log" class="col-sm border border-dark bg-white overflow-auto" style = " max-height: 700px;">
                 <p class="text-center fs-4">Move Log</p>
             </div>
         </div>
         
+        <!-- Player Captured Pieces -->
         <div class = "row">
             <div class = "col">
                 <div id="black-captured-con" class="d-flex flex-row text-white">
@@ -73,38 +77,20 @@
         <!-- Game Modal -->
         <div class="modal fade" id="gameModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h4 class="modal-title" id="modal-title">Please wait...</h4>
-                </div>
-                <div class="modal-body">
-                  <p id="modal-body">Wait for your opponent to connect to the game</p>
-                </div>
-                <div class="modal-footer">
-                  <a href="/" class="btn btn-danger">Return to Lobby</a>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        <!-- Resign Modal -->
-        <div class="modal fade" id="resignModal" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h4 class="modal-title" id="resignModalTitle">Confirm</h4>
+                        <h4 class="modal-title" id="modal-title">Please wait...</h4>
                     </div>
                     <div class="modal-body">
-                        <p id="modal-body">Are you sure you want to resign this game?</p>
+                        <p id="modal-body">Wait for your opponent to connect to the game</p>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn btn-danger" id="yesRes">Yes</button>
-                        <button class="btn btn-success" id="noRes">No</button>
+                        <a href="/" class="btn btn-danger">Return to Lobby</a>
                     </div>
                 </div>
             </div>
         </div>
-
+        
         <!-- Rule Modal -->
         <div class="modal fade" id="ruleModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl">
@@ -125,13 +111,63 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Delegate Modal -->
+        <div class="modal fade" id="delegateModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="delegateModalTitle">King Delegation Action</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row justify-content-around">
+                            <!-- First dropdown selects the under_command of kingCorp to delegate (once per turn) -->
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button" id="kingDelegateMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Which Unit
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="kingDelegateMenuButton"></div>
+                            </div>
+                            <!-- Second the target delegation corp (only bishops, limit 6 under_command) -->
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button" id="targetCorpMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Target Corp
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="targetCorpMenuButton"></div>
+                            </div>
+                            <!-- Indicators to show when/why delegations not allowed -->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <!-- Add delegation confirmation button -->
+                        <button class="btn btn-danger" id="confirmDelegate">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resign Modal -->
+        <div class="modal fade" id="resignModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="resignModalTitle">Confirm</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p id="modal-body">Are you sure you want to resign this game?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" id="yesRes">Yes</button>
+                        <button class="btn btn-success" id="noRes">No</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Bottom Button Row -->
         <div class ="row justify-content-around">
-            <!-- Button for rules modal -->
             <a data-toggle="modal" data-target="#ruleModal"><button type="button" class = "btn btn-primary btn-sm">Rules</button></a>
-            <!-- Buttons for in game options -->
-            <button type="button" class="btn btn-success btn-sm">Delegate</button>
+            <a data-toggle="modal" data-target="#delegateModal"><button type="button" class="btn btn-success btn-sm">Delegate</button></a>
             <button type="button" class="btn btn-warning btn-sm">Pass</button>
             <a data-toggle="modal" data-target="#resignModal"><button id="resign" type="button" class="btn btn-danger btn-sm">Resign</button></a>
         </div>
