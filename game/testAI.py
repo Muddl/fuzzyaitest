@@ -2606,9 +2606,14 @@ def produceAction(boardstate, whiteMove, corpList, readyToBlitz):
     Apos = move_to_send[0:2]
     Acolor = boardstate[Apos][:1]
     Arank = boardstate[Apos][1:2]
+    corpWritten = False
     for corp in corpList['b']:
-        if Arank in ["K", "B"]:
+        if Arank == "K" and Apos == corpList['b'][corp]["leader"]["pos"] and not corpWritten:
             Acorp = corpList['b'][corp]["leader"]["corp"]
+            corpWritten = True
+        elif Arank == "B" and Apos == corpList['b'][corp]["leader"]["pos"] and not corpWritten:
+            Acorp = corpList['b'][corp]["leader"]["corp"]
+            corpWritten = True
         else:
             for piece in corpList['b'][corp]["under_command"]:
                 if piece["pos"] == Apos:
@@ -2639,13 +2644,19 @@ def produceAction(boardstate, whiteMove, corpList, readyToBlitz):
     if Tpos in boardstate:
         Tcolor = boardstate[Tpos][:1]
         Trank = boardstate[Tpos][1:2]
+        corpWritten = False
         for corp in corpList['w']:
-            if Trank in ["K", "B"]:
+            if Trank == "K" and Tpos == corpList['w'][corp]["leader"]["pos"] and not corpWritten:
                 Tcorp = corpList['w'][corp]["leader"]["corp"]
-            else:
+                corpWritten = True
+            elif Trank == "B" and Tpos == corpList['w'][corp]["leader"]["pos"] and not corpWritten:
+                Tcorp = corpList['w'][corp]["leader"]["corp"]
+                corpWritten = True
+            elif Trank in ["P", "R", "N", "Q"]:
                 for piece in corpList['w'][corp]["under_command"]:
-                    if piece["pos"] == Tpos:
+                    if piece["pos"] == Tpos and not corpWritten:
                         Tcorp = piece["corp"]
+                        corpWritten = True
                         
         action_to_send = {
             'actionType': 'ATTACK_ATTEMPT',
@@ -2665,7 +2676,7 @@ def produceAction(boardstate, whiteMove, corpList, readyToBlitz):
             'corpList': corpList,
             'whiteMove': whiteMove
         }
-
+    
     # print(action_to_send)
     return action_to_send
 

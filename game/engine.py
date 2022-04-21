@@ -316,7 +316,7 @@ class Boardstate:
             try:
             # GetValidMoveset
                 (in_range, setup, movement) = self.getValidMoveset(Piece(activeColor, activeRank, activePos, activeCorp))
-            
+
                 # processMovement
                 if activePos in self.board: # Selected tile must contain a piece on the board
                     if targetPos in movement or targetPos in setup:  # If the square is in the piece's movement or setup set [empty targetPos]
@@ -678,6 +678,7 @@ class Boardstate:
         setup = []
         movement = []
         
+        print(selected.getTraits())
         if (selected.getTraits() == self.corpLists[friendly][selectedCorp]["leader"]): # Confirm piece is a bishop & the leader of its corp
             if self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Attacks/Captures/Full Movement
                 in_range = [pos for pos in base_list if str(self.board.get(pos))[0] == enemy]

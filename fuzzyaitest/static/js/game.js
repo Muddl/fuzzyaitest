@@ -457,6 +457,10 @@ const resolveAttack = (data) => {
     else {
         setTimeout(failedAttack(data.roll_val, data.blitz, data.new_boardstate), 3000);
     };
+
+    if ("kingDead" in data) {
+
+    };
 };
 
 const startAITurn = () => {
@@ -515,7 +519,7 @@ socket.onmessage = (message) => {
             }
             if (local_white_captured != null) {
                 local_white_captured.forEach((piece) => {
-                    $whiteCapturedCon.append($('<img>', {src: `..\chessboard\w${piece}.png`}))
+                    $whiteCapturedCon.append($('<img>', {src: `..\chessboard\\w${piece}.png`}))
                 });
             }
 
@@ -558,18 +562,24 @@ socket.onmessage = (message) => {
     }
     // On AI_ACTION_REQ actionType
     else if(data.actionType=="AI_TURN_RES") {
+        local_corplist = data.corpList;
+        local_boardstate = data.new_boardstate;
+        local_whiteMove = data.whiteMove;
+        local_readyToBlitz = data.readyToBlitz;
         local_ai_action_list = data.black_actions;
         local_ai_move_list = data.black_moves;
 
-        for (let i = 0; i < 3; i++) {
-            if (local_ai_move_list[i] != "") {
-                if (local_ai_action_list[i].actionType == "ATTACK_ATTEMPT" && local_ai_action_list[i].isSuccessfulAttack == true && local_ai_action_list[i].activePiece.rank != 'R') {
-                    board.move(local_ai_move_list[i]);
-                } else if (local_ai_action_list[i].actionType == "MOVEMENT") {
-                    board.move(local_ai_move_list[i]);
+        local_ai_action_list.forEach((action, index) => {
+            if (local_ai_move_list[index] != "") {
+                if (action.actionType == "ATTACK_ATTEMPT") {
+                    console.log(action);
+                    resolveAttack(action);
+                } else if (local_ai_action_list[index].actionType == "MOVEMENT") {
+                    board.move(local_ai_move_list[index]);
                 }
             }
-        }
+        });
+        board.position(data.new_boardstate, false);
     }
 };
 
