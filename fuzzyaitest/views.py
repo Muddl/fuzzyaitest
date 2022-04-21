@@ -84,7 +84,9 @@ def completed(request):
     g = Game.objects.all().filter(Q(owner=request.user) | Q(opponent=request.user)).filter(status=3)
     for i in g:
         x = {}
+        x["id"] = i.pk
         x["result"] = ""
+        x["ended"] = i.updated_at
         if i.owner == request.user:
             x["opponent"] = i.opponent
             x["side"] = i.owner_side
@@ -119,6 +121,7 @@ def completed(request):
             else:
                 x["result"] = i.winner
         games.append(x)
+        print(games)
     return render(request, "game/completed.html", {"completed": games})
 
 @login_required

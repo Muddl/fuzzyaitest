@@ -25,13 +25,15 @@
 {% endblock %}
 
 {% block body %}
-  <div class="container mt-4" style = "font-family: 'MedievalSharp'; color: white">
+  <div class="container mt-4" style = "font-family: 'MedievalSharp'; color: black">
     <h2>Your Completed Games</h2> <br>
     <div class="container" class="container align-items-stretch" style="display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline;">
       {% for room in completed %}
         <div class="card border-primary m-1" style="width: 250px">
           <div class="card-body">
-            <h6 class="card-text">Against: {{room.opponent.username}}</h6>
+            <h6 class="card-text">Game Id: {{room.id}}</h6>
+            <h6 class="card-text">Ended: {{room.ended}}</h6>
+            <h6 class="card-text">Against: {{room.opponent.username | default:"AI"}}</h6>
             <h6 class="card-text">You Played as {{room.side | title}}</h6>
             <h6 class="card-text">Result: {{room.result | title}}</h6>
           </div>
