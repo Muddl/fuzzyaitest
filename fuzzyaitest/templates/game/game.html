@@ -42,6 +42,7 @@
                 </div>
             </div>
         </div>
+
         <div class="row">
             <div class="col-sm border border-dark bg-white">
                 <p class="text-center fs-4">Attacking</p>
@@ -53,56 +54,87 @@
             </div>
     
             <!-- Captured Pieces by each side / if need to re-implement pull code from sticky note  -->
-            
-            
             <div id="my_board" style="width: 650px"></div>
+
             <!-- Move Log Column -->
             <div id="move_log" class="col-sm border border-dark bg-white overflow-auto" style = " max-height: 700px;">
                 <p class="text-center fs-4">Move Log</p>
             </div>
+        </div>
         
-            
-            
-             <!-- Modal  -->
-            <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-xl">
-                   <div class="modal-content">
-                      <div class="modal-header text-center">
-                         <h4 class="modal-title" id="myModalLabel">Rules</h4>
-                         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                      </div>
-                      <div class="modal-body">
+        <div class = "row">
+            <div class = "col">
+                <div id="black-captured-con" class="d-flex flex-row text-white">
+                    <p>Player captured pieces:</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Modal -->
+        <div class="modal fade" id="gameModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title" id="modal-title">Please wait...</h4>
+                </div>
+                <div class="modal-body">
+                  <p id="modal-body">Wait for your opponent to connect to the game</p>
+                </div>
+                <div class="modal-footer">
+                  <a href="/" class="btn btn-danger">Return to Lobby</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        <!-- Resign Modal -->
+        <div class="modal fade" id="resignModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="resignModalTitle">Confirm</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p id="modal-body">Are you sure you want to resign this game?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" id="yesRes">Yes</button>
+                        <button class="btn btn-success" id="noRes">No</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rule Modal -->
+        <div class="modal fade" id="ruleModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header text-center">
+                        <h4 class="modal-title" id="ruleModalTitle">Rules</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    </div>
+                    <div class="modal-body">
                         <p>
                             <img src="{% static 'rules/0001.jpg' %}" class = "img-fluid justify-content-center padding-top"/>
                             <img src="{% static 'rules/0002.jpg' %}" class = "img-fluid justify-content-center padding-top"/>
                         </p>
                     </div>
-                      <div class="modal-footer">
-                         <button type="button" class="btn-secondary" data-dismiss="modal">Close</button>
-                      </div>
-                   </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
                 </div>
-             </div>
-        </div>
-        
-        <div class = "row">
-            <div class = "col">
-            <div id="black-captured-con" class="d-flex flex-row text-white">
-                <p>Player captured pieces:</p>
-            </div>
             </div>
         </div>
-        
+
+        <!-- Bottom Button Row -->
         <div class ="row justify-content-around">
             <!-- Button for rules modal -->
-           <a data-toggle="modal" data-target="#myModal">
-               <button type="button" class = "btn btn-primary btn-sm">Rules</button>
-            </a>
-           <!-- Buttons for in game options -->
-           <button type="button" class = "btn btn-success btn-sm">Delegate</button>
-           <button type="button" class = "btn btn-warning btn-sm">Pass</button>
-           <button type="button" class = "btn btn-danger btn-sm">Resign</button>
-       </div>
+            <a data-toggle="modal" data-target="#ruleModal"><button type="button" class = "btn btn-primary btn-sm">Rules</button></a>
+            <!-- Buttons for in game options -->
+            <button type="button" class="btn btn-success btn-sm">Delegate</button>
+            <button type="button" class="btn btn-warning btn-sm">Pass</button>
+            <a data-toggle="modal" data-target="#resignModal"><button id="resign" type="button" class="btn btn-danger btn-sm">Resign</button></a>
+        </div>
 
     </div>
 {% endblock body %}

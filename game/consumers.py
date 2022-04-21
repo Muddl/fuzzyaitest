@@ -88,7 +88,10 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             elif actionType == "HIGHLIGHT":
                 await self.highlight(content)
             elif actionType == "AI_TURN_REQ":
-                await self.ai_turn_req(content);
+                await self.ai_turn_req(content)
+            elif actionType == "RESIGN":
+                await self.resign()
+                await self.game_over(content["result"])
         except:
             pass
     
@@ -412,6 +415,21 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             })
         print(f"{event['sender_channel_name']}\t-\tSending AI_TURN_REQ")
     
+    async def resign(self):
+        await self.channel_layer.group_send(
+            str(self.game_id),
+            {
+                "type": "resign.game",
+                'sender_channel_name': self.channel_name
+            }
+        )
+    
+    async def resign_game(self, event):
+        if self.channel_name != event['sender_channel_name']:
+            await self.send_json({
+                "actionType":"OPPONENT_RESIGNED",
+            })
+    
     # Called after every move_new & attempt_action JSON is sent to persist gamestate to DB
     @database_sync_to_async
     def update(self, new_boardstate, corplist, whiteMove, readyToBlitz): # , pgn):
@@ -438,8 +456,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     def updateEOG(self, new_boardstate, corplist, whiteMove, readyToBlitz, kingDead): # , pgn):
         # Find current game, toss update if doesn't exist for some reason
         game = Game.objects.all().filter(id=self.game_id)[0]
-        if not game:
-            print("DB update failed, game not found")
+        if not game or game.status == 3:
             return
         
         # Replace existing boardstate & PGN with updated version
@@ -456,6 +473,19 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 game.winner = 'White wins'
             if kingDead == 'b':
                 game.winner = 'Black wins'
+        
+        # Persist transaction
+        print("Saving game details")
+        game.save()
+        print("Successfully saved")
+    
+    @database_sync_to_async
+    def game_over(self, result):
+        game = Game.objects.all().filter(id=self.game_id)[0]
+        if game.status == 3:
+            return
+        game.winner = result
+        game.status = 3
         
         # Persist transaction
         print("Saving game details")
