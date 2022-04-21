@@ -38,7 +38,6 @@
           <div class="card-body text-dark text-center" style = "font-family: 'MedievalSharp';">
             <h6 class = "card-text">Created: {{running_game.created_at}}</h6>
             <h6 class = "card-text">Last Played: {{running_game.updated_at}}</h6>
-            <h6 class="card-text">Playing as {{room.owner_side | title}}</h6>
             <!--<h6 class="card-text">Awaiting Player to Join</h6>-->
             <a type="button" class="btn btn-lg btn-block btn-primary" href={{running_game.link}}>Join Game</a>
           </div>
@@ -63,7 +62,7 @@
           <div class="card-body" style = "font-family: 'MedievalSharp';">
             <h6 class="card-text">Against: {{room.opponent.username}}</h6>
             <h6 class="card-text">You're Playing as {{room.side | title}}</h6>
-            <h6 class="card-text">Awaiting Pplayer to Join</h6>
+            <h6 class="card-text">Awaiting Player to Join</h6>
             <a type="button" class="btn btn-lg btn-block btn-primary" href="{{ room.link }}">Continue</a>
           </div>
         </div>
@@ -71,7 +70,7 @@
         <p style = "font-family: 'MedievalSharp'; color: white">You do not have any Ongoing Games! </p> 
        
         <!-- This button links to creating a single player game, re-implement w/ multiplayer -->
-        <!--<a class="btn btn-secondary mx-2" href="/create" role="button">Create &raquo;</a>-->
+        <a class="btn btn-secondary mx-2" href="/create" role="button">Create &raquo;</a>
 
       {% endfor %}
     </div> 

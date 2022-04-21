@@ -352,7 +352,8 @@ const rollAnimStart = (data) => {
     });
 };
 
-const successfullAttack = (rollVal, blitz, white_captured, black_captured, new_boardstate) => {
+const successfullAttack = (rollVal, blitz, white_captured, black_captured, new_boardstate, activePiece, targetPiece) => {
+    console.log("successful attack");
     let dice = document.querySelectorAll("img.dice");
     var moveToBeLogged = document.createElement('p');
 
@@ -377,11 +378,11 @@ const successfullAttack = (rollVal, blitz, white_captured, black_captured, new_b
 
     if (blitz) {
         $attack_result.text("Successful Attack + Blitz!").css("color", "green").css("visibility","visible");
-        moveToBeLogged.textContent = `Attack succeeded with blitz and a roll of ${dieValue}`;
+        moveToBeLogged.textContent = `${activePiece.color + activePiece.rank} ${activePiece.pos} -> ${targetPiece.pos} --- Attack on ${targetPiece.color + targetPiece.rank} succeeded with blitz and a roll of ${dieValue}`;
         renderPieceListAnim(white_captured, black_captured);
     } else {
         $attack_result.text("Successful Attack!").css("color", "green").css("visibility","visible");
-        moveToBeLogged.textContent = `Attack succeeded with a roll of ${dieValue}`;
+        moveToBeLogged.textContent = `${activePiece.color + activePiece.rank} ${activePiece.pos} -> ${targetPiece.pos} --- Attack on ${targetPiece.color + targetPiece.rank} succeeded with a roll of ${dieValue}`;
         renderPieceListAnim(white_captured, black_captured);
     };
 
@@ -391,7 +392,8 @@ const successfullAttack = (rollVal, blitz, white_captured, black_captured, new_b
     removeCombatPieces();
 };
 
-const failedAttack = (rollVal, blitz, new_boardstate) => {
+const failedAttack = (rollVal, blitz, new_boardstate, activePiece, targetPiece) => {
+    console.log("failed attack");
     let dice = document.querySelectorAll("img.dice");
     var moveToBeLogged = document.createElement('p');
 
@@ -416,10 +418,10 @@ const failedAttack = (rollVal, blitz, new_boardstate) => {
 
     if (blitz) {
         $attack_result.text("Failed Attack + Blitz!").css("color", "red").css("visibility","visible");
-        moveToBeLogged.textContent = `Attack failed with blitz and a roll of ${dieValue}`;
+        moveToBeLogged.textContent = `${activePiece.color + activePiece.rank} ${activePiece.pos} -> ${targetPiece.pos} --- Attack on ${targetPiece.color + targetPiece.rank} failed with blitz and a roll of ${dieValue}`;
     } else {
         $attack_result.text("Failed Attack!").css("color", "red").css("visibility","visible");
-        moveToBeLogged.textContent = `Attack failed with a roll of ${dieValue}`;
+        moveToBeLogged.textContent = `${activePiece.color + activePiece.rank} ${activePiece.pos} -> ${targetPiece.pos} --- Attack on ${targetPiece.color + targetPiece.rank} failed with a roll of ${dieValue}`;
     };
 
     board.position(new_boardstate);
@@ -443,10 +445,10 @@ const resolveAttack = (data) => {
         local_black_captured = data.black_captured;
     }
 
-    if (data.isSuccessfulAttack == true) {
-        setTimeout(successfullAttack(data.roll_val, data.isBlitz, local_white_captured, local_black_captured, data.new_boardstate), 3000);
+    if (data.isSuccessfulAttack) {
+        setTimeout(successfullAttack(data.roll_val, data.isBlitz, local_white_captured, local_black_captured, data.new_boardstate, data.activePiece, data.targetPiece), 3000);
     } else {
-        setTimeout(failedAttack(data.roll_val, data.isBlitz, data.new_boardstate), 3000);
+        setTimeout(failedAttack(data.roll_val, data.isBlitz, data.new_boardstate, data.activePiece, data.targetPiece), 3000);
     };
 
     // if ("kingDead" in data) {
@@ -578,6 +580,8 @@ socket.onmessage = (message) => {
                     $move_log.append(textElement);
                     $move_log.css("display",'inline');
                 }
+            } else if (action.actionType == "ATTACK_ATTEMPT") {
+                resolveAttack(action);
             }
         });
         board.position(data.new_boardstate, false);
