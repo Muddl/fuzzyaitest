@@ -3,13 +3,19 @@
 {% block title %}Homepage{% endblock title %}
 
 {% block navbar %}
-    <ul class="navbar-nav mr-auto">
+    <ul class="navbar-nav mr-auto" style = "font-family: 'MedievalSharp'">
         <li class="nav-item">
-            <a class="nav-link active">Homepage</a>
+            <a class="nav-link active" href="/">Homepage</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="/rules">Rules</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="/completed">Completed</a>
         </li>
     </ul>
 
-    <ul class="navbar-nav ml-auto">
+    <ul class="navbar-nav ml-auto" style = "font-family: 'MedievalSharp';">
         <li class="nav-item">
             <a class="nav-link" href="/accounts/logout">Logout</a>
         </li>
@@ -20,25 +26,56 @@
 {% endblock navbar %}
 
 {% block body %}
-    <div class="container align-items-stretch d-flex flex-wrap align-items-baseline">
-        {% for running_game in ai %}
+<!-- Single Player-->
+<div class="container mt-4" style = "font-family: 'MedievalSharp'; color: white">
+    <h2>Single Player Games</h2> <br>
+    <div class="container" class="container align-items-stretch" style="display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline;">
+      {% for running_game in ai %}
         <div class="card border-primary m-1" style="width: 250px">
-            <div class="card-header text-center">
-                <h4 class="my-0 font-weight-normal">{{running_game.level}}</h4>
-                <p>Created: {{running_game.created_at}}</p>
-                <p>Last played: {{running_game.updated_at}}</p>
-            </div>
-            <div class="card-body">
-                <a type="button" class="btn btn-lg btn-block btn-primary" href={{running_game.link}}>Join Game</a>
-            </div>
+          <div class="card-header text-center">
+            <h4 class="my-0 font-weight-normal text-dark">{{running_game.level}}</h4>
+          </div>
+          <div class="card-body text-dark text-center" style = "font-family: 'MedievalSharp';">
+            <h6 class = "card-text">Created: {{running_game.created_at}}</h6>
+            <h6 class = "card-text">Last Played: {{running_game.updated_at}}</h6>
+            <h6 class="card-text">Playing as {{room.owner_side | title}}</h6>
+            <!--<h6 class="card-text">Awaiting Player to Join</h6>-->
+            <a type="button" class="btn btn-lg btn-block btn-primary" href={{running_game.link}}>Join Game</a>
+          </div>
         </div>
-        {% empty %}
-            <p>There aren't any created AI games right now. </p>
-        {% endfor %}
-    </div>
-    <div class="container">
+        
+      {% empty %}
+        <p style = "font-family: 'MedievalSharp'; color: white">You have not created any public games!</p> <a class="btn btn-secondary mx-2" href="/create" role="button">Create &raquo;</a>
+      {% endfor %}
+      <div class="container">
         <div class="row d-flex justify-content-center">
-            <a class="btn btn-secondary mx-2" href="/create" role="button">Create</a>
+           <a class="btn btn-secondary mx-2" href="/create" role="button">Create</a>
+       </div>
+    </div> 
+  </div>
+
+  <!-- Multiplayer games-->
+  <div class="container mt-4" style = "font-family: 'MedievalSharp';">
+    <h2 style = "color: white">Multiplayer Games</h2> <br>
+    <div class="container" class="container align-items-stretch" style="display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline;">
+      {% for room in ongoing %}
+        <div class="card border-primary m-1" style="width: 250px">
+          <div class="card-body" style = "font-family: 'MedievalSharp';">
+            <h6 class="card-text">Against: {{room.opponent.username}}</h6>
+            <h6 class="card-text">You're Playing as {{room.side | title}}</h6>
+            <h6 class="card-text">Awaiting Pplayer to Join</h6>
+            <a type="button" class="btn btn-lg btn-block btn-primary" href="{{ room.link }}">Continue</a>
+          </div>
         </div>
-    </div>
+      {% empty %}
+        <p style = "font-family: 'MedievalSharp'; color: white">You do not have any Ongoing Games! </p> 
+       
+        <!-- This button links to creating a single player game, re-implement w/ multiplayer -->
+        <!--<a class="btn btn-secondary mx-2" href="/create" role="button">Create &raquo;</a>-->
+
+      {% endfor %}
+    </div> 
+  </div>
+
+   
 {% endblock body %}

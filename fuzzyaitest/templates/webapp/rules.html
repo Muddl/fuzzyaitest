@@ -1,0 +1,45 @@
+{% extends 'layout.html' %}
+{% load static %}
+{% block title %}Rules{% endblock title %}
+
+{% block navbar %}
+    <ul class="navbar-nav mr-auto" style = "font-family: 'MedievalSharp'">
+        <li class="nav-item">
+            <a class="nav-link active" href = "/">Homepage</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="/rules">Rules</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="/completed">Completed</a>
+        </li>
+    </ul>
+
+    <ul class="navbar-nav ml-auto" style = "font-family: 'MedievalSharp';">
+        <li class="nav-item">
+            <a class="nav-link" href="/accounts/logout">Logout</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active"><b>Hello, {{ user.username }}</b></a>
+        </li>
+    </ul>
+{% endblock navbar %}
+
+{% block body %}
+
+<div class = "container">
+    <!-- Serve image or pdf link to rules -->
+    <img src="{% static 'rules/0001.jpg' %}" class = "img-fluid justify-content-center padding-top"/> 
+    <img src="{% static 'rules/0002.jpg' %}" class = "img-fluid justify-content-center"/>
+</div>
+
+
+
+
+
+
+
+
+
+
+{% endblock body %}
