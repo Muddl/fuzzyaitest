@@ -6,6 +6,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.views import View
+from django.db.models import Q
 
 from game.models import Game
 
@@ -56,4 +57,71 @@ class createGame(LoginRequiredMixin, View):
         l.save()
         messages.add_message(request, messages.SUCCESS, "AI Game created and displayed in Homepage.")
         return HttpResponseRedirect(reverse("homepage"))
+
+@login_required
+def ongoing(request):
+    games = []
+    l = Game.objects.all().filter(owner=request.user).filter(status=1)
+    g = Game.objects.all().filter(Q(owner=request.user) | Q(opponent=request.user)).filter(status=2)
+    for i in g:
+        x = {}
+        if i.owner == request.user:
+            x["opponent"] = i.opponent
+            x["side"] = i.owner_side
+        else:
+            x["opponent"] = i.owner
+            if i.owner_side == "white":
+                x["side"] = "black"
+            else:
+                x["side"] = "white"
+        x["link"] = f"/game/{i.pk}"
+        games.append(x) 
+    return render(request, "game/ongoing.html", {"public":l, "ongoing": games})
+
+@login_required
+def completed(request):
+    games=[]
+    g = Game.objects.all().filter(Q(owner=request.user) | Q(opponent=request.user)).filter(status=3)
+    for i in g:
+        x = {}
+        x["result"] = ""
+        if i.owner == request.user:
+            x["opponent"] = i.opponent
+            x["side"] = i.owner_side
+            if i.winner == "White wins":
+                if i.owner_side == "white":
+                    x["result"] = "You won this match"
+                else:
+                    x["result"] = "You lost this match"
+            elif i.winner == "Black wins":
+                if i.owner_side == "black":
+                    x["result"] = "You won this match"
+                else:
+                    x["result"] = "You lost this match"
+            else:
+                x["result"] = i.winner
+        else:
+            x["opponent"] = i.owner
+            if i.owner_side == "white":
+                x["side"] = "black"
+            else:
+                x["side"] = "white"
+            if i.winner == "Black wins":
+                if i.owner_side == "white":
+                    x["result"] = "You won this match"
+                else:
+                    x["result"] = "You lost this match"
+            elif i.winner == "White wins":
+                if i.owner_side == "black":
+                    x["result"] = "You won this match"
+                else:
+                    x["result"] = "You lost this match"
+            else:
+                x["result"] = i.winner
+        games.append(x)
+    return render(request, "game/completed.html", {"completed": games})
+
+@login_required
+def rules(request):
+    return render(request, "webapp/rules.html")
 

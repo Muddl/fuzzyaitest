@@ -15,8 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from .views import index, createGame, register
+from .views import index, createGame, register, ongoing, completed, rules
 from game.views import game
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,4 +27,11 @@ urlpatterns = [
     path('game/<int:game_id>', game, name = 'game'),
     path('create/', createGame.as_view(), name = 'create'),
     path('register/', register.as_view(), name = 'register'),
+    path('ongoing/', ongoing, name = 'ongoing'),
+    path('completed/', completed, name = 'completed'),
+    path('rules/', rules, name = 'rules'),
+    
+
+    
 ]
+urlpatterns += staticfiles_urlpatterns()

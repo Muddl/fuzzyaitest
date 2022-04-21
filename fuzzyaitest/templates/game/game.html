@@ -13,7 +13,13 @@
 {% block navbar %}
     <ul class="navbar-nav mr-auto">
         <li class="nav-item">
-            <a class="nav-link" href="/">Homepage</a>
+            <a class = "nav-link active" href = "/">Homepage</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="/rules">Rules</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="/completed">Completed</a>
         </li>
     </ul>
 
@@ -40,22 +46,47 @@
             </div>
     
             <!-- Captured Pieces by each side -->
-            <div class="col">
-                <div id="white-captured-con" class="d-flex-inline flex-row">
+            <div class="col" style = " max-height: 700px;">
+                <div id="white-captured-con" class="d-flex-inline flex-row text-white">
                     <p>AI captured pieces:</p>
                 </div>
                 
                 <div id="my_board" style="width: 650px"></div>
             
-                <div id="black-captured-con" class="d-flex-inline flex-row">
+                <div id="black-captured-con" class="d-flex-inline flex-row text-white">
                     <p>Player captured pieces:</p>
                 </div>
             </div>
     
             <!-- Move Log Column -->
-            <div id="move_log" class="col-sm border border-dark bg-white">
+            <div id="move_log" class="col-sm border border-dark bg-white overflow-auto sticky-bottom" style = " max-height: 700px;">
                 <p class="text-center fs-4">Move Log</p>
             </div>
+        
+            <!-- Button to trigger modal -->
+            <a data-toggle="modal" data-target="#myModal">
+                <button type="button" class = "btn btn-primary">Rules</button>
+            </a>
+             <!-- Modal  -->
+            <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                   <div class="modal-content">
+                      <div class="modal-header text-center">
+                         <h4 class="modal-title" id="myModalLabel">Rules</h4>
+                         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                      </div>
+                      <div class="modal-body">
+                        <p>
+                            <img src="{% static 'rules/0001.jpg' %}" class = "img-fluid justify-content-center padding-top"/>
+                            <img src="{% static 'rules/0002.jpg' %}" class = "img-fluid justify-content-center padding-top"/>
+                        </p>
+                    </div>
+                      <div class="modal-footer">
+                         <button type="button" class="btn-secondary" data-dismiss="modal">Close</button>
+                      </div>
+                   </div>
+                </div>
+             </div>
         </div>
     </div>
 {% endblock body %}
