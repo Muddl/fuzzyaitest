@@ -283,12 +283,6 @@ const onDrop = (source, target, piece, newPos, oldPos) => {
             });
 
             socket.send(movementJson);
-
-            // Append a new entry to the movelog
-            var textElement = document.createElement('p');
-            textElement.textContent = color + rank + ' ' + source + ' -> ' + target;
-            $move_log.append(textElement);
-            $move_log.css("display",'inline');
         };
     };
 }
@@ -320,15 +314,13 @@ const renderPieceListAnim = (white_captured, black_captured) => {
     if (colorOfPiece == 'b') {
         PlayerCapturedPieces.push(eliminatedPiece);
         for (let count = PlayerCapturedPieces.length; count < PlayerCapturedPieces.length + 1; count++) {
-            var imageElement = document.createElement('img');
-            imageElement.setAttribute('src', PlayerCapturedPieces[count-1]).setAttribute('style', 'width: 25px');
+            var imageElement = $('<img />', { src: PlayerCapturedPieces[count-1], }).css('width', '40px').css('height', '40px');
             $own_pieces.append(imageElement);
         };
     } else {
         OppCapturedPieces.push(eliminatedPiece)
         for (let count = OppCapturedPieces.length; count < OppCapturedPieces.length + 1; count++) {
-            var imageElement = document.createElement('img');
-            imageElement.setAttribute('src', OppCapturedPieces[count-1]).setAttribute('style', 'width: 25px');
+            var imageElement = $('<img />', { src: OppCapturedPieces[count-1], }).css('width', '40px').css('height', '40px');
             $opp_pieces.append(imageElement);
         };
     };
@@ -352,7 +344,7 @@ const removeCombatPieces = () => {
 const rollAnimStart = (data) => {
     let dice = document.querySelectorAll("img.dice");
 
-    setCombatPieces(data.activePiece, data.targetPiece);
+    setCombatPieces(data.activePiece.color + data.activePiece.rank, data.targetPiece.color + data.targetPiece.rank);
     $attack_result.text("Rolling for Attack!").css("color", "grey");
 
     dice.forEach((die) => {
@@ -451,16 +443,15 @@ const resolveAttack = (data) => {
         local_black_captured = data.black_captured;
     }
 
-    if (data.isSuccessfulAttack) {
-        setTimeout(successfullAttack(data.roll_val, data.blitz, local_white_captured, local_black_captured, data.new_boardstate), 3000);
-    }
-    else {
-        setTimeout(failedAttack(data.roll_val, data.blitz, data.new_boardstate), 3000);
+    if (data.isSuccessfulAttack == true) {
+        setTimeout(successfullAttack(data.roll_val, data.isBlitz, local_white_captured, local_black_captured, data.new_boardstate), 3000);
+    } else {
+        setTimeout(failedAttack(data.roll_val, data.isBlitz, data.new_boardstate), 3000);
     };
 
-    if ("kingDead" in data) {
+    // if ("kingDead" in data) {
 
-    };
+    // };
 };
 
 const startAITurn = () => {
@@ -537,6 +528,12 @@ socket.onmessage = (message) => {
         
         board.position(data.new_boardstate);
 
+        // Append a new entry to the movelog
+        var textElement = document.createElement('p');
+        textElement.textContent = data.activePiece.color + data.activePiece.rank + ' ' + data.activePiece.pos + ' -> ' + data.targetPiece.pos;
+        $move_log.append(textElement);
+        $move_log.css("display",'inline');
+
         if (!local_whiteMove) {
             startAITurn();
         }
@@ -572,10 +569,14 @@ socket.onmessage = (message) => {
         local_ai_action_list.forEach((action, index) => {
             if (local_ai_move_list[index] != "") {
                 if (action.actionType == "ATTACK_ATTEMPT") {
-                    console.log(action);
                     resolveAttack(action);
                 } else if (local_ai_action_list[index].actionType == "MOVEMENT") {
                     board.move(local_ai_move_list[index]);
+                    // Append a new entry to the movelog
+                    var textElement = document.createElement('p');
+                    textElement.textContent = action.activePiece.color + action.activePiece.rank + ' ' + action.activePiece.pos + ' -> ' + action.targetPiece.pos;
+                    $move_log.append(textElement);
+                    $move_log.css("display",'inline');
                 }
             }
         });

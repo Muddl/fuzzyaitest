@@ -37,7 +37,7 @@
     <div id="main-container" class="container">
         <div class = "row">
             <div class="col" style = " max-height: 700px;">
-                <div id="white-captured-con" class="d-flex-inline flex-row text-white">
+                <div id="white-captured-con" class="d-flex flex-row text-white">
                     <p>AI captured pieces:</p>
                 </div>
             </div>
@@ -87,25 +87,22 @@
         
         <div class = "row">
             <div class = "col">
-            <div id="black-captured-con" class="d-flex-inline flex-row text-white" style = "display: inline;">
+            <div id="black-captured-con" class="d-flex flex-row text-white">
                 <p>Player captured pieces:</p>
             </div>
             </div>
         </div>
         
-    </div>
-   
+        <div class ="row justify-content-around">
+            <!-- Button for rules modal -->
+           <a data-toggle="modal" data-target="#myModal">
+               <button type="button" class = "btn btn-primary btn-sm">Rules</button>
+            </a>
+           <!-- Buttons for in game options -->
+           <button type="button" class = "btn btn-success btn-sm">Delegate</button>
+           <button type="button" class = "btn btn-warning btn-sm">Pass</button>
+           <button type="button" class = "btn btn-danger btn-sm">Resign</button>
+       </div>
 
-<div class = "container">
-    <div class ="row justify-content-center">
-         <!-- Button for rules modal -->
-        <a data-toggle="modal" data-target="#myModal">
-            <button type="button" class = "btn btn-primary btn-sm">Rules</button>
-         </a>
-        <!-- Buttons for in game options -->
-        <button type="button" class = "btn btn-success btn-sm">Delegate</button>
-        <button type="button" class = "btn btn-warning btn-sm">Pass</button>
-        <button type="button" class = "btn btn-danger btn-sm">Resign</button>
     </div>
-</div>
 {% endblock body %}

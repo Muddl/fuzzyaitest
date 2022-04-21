@@ -161,8 +161,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                             "whiteMove": whiteMove,
                             'isBlitz': isBlitz,
                             'kingDead': kingDead,
-                            "activePiece": payload["activePiece"]["color"] + payload["activePiece"]["rank"],
-                            "targetPiece": payload["targetPiece"]["color"] + payload["targetPiece"]["rank"],
+                            "activePiece": payload["activePiece"],
+                            "targetPiece": payload["targetPiece"],
                             'sender_channel_name': self.channel_name
                         }
                     )
@@ -180,8 +180,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                             "corpList": corpList,
                             "whiteMove": whiteMove,
                             'isBlitz': isBlitz,
-                            "activePiece": payload["activePiece"]["color"] + payload["activePiece"]["rank"],
-                            "targetPiece": payload["targetPiece"]["color"] + payload["targetPiece"]["rank"],
+                            "activePiece": payload["activePiece"],
+                            "targetPiece": payload["targetPiece"],
                             'sender_channel_name': self.channel_name
                         }
                     )
@@ -199,8 +199,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                         "corpList": corpList,
                         "whiteMove": whiteMove,
                         'isBlitz': isBlitz,
-                        "activePiece": payload["activePiece"]["color"] + payload["activePiece"]["rank"],
-                        "targetPiece": payload["targetPiece"]["color"] + payload["targetPiece"]["rank"],
+                        "activePiece": payload["activePiece"],
+                        "targetPiece": payload["targetPiece"],
                         'sender_channel_name': self.channel_name
                     }
                 )
@@ -319,9 +319,6 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                             sourcePos = AIAction["activePiece"]["pos"]
                             targetPos = AIAction["targetPiece"]["pos"]
                             
-                            AIAction["activePiece"] = AIAction["activePiece"]["color"] + AIAction["activePiece"]["rank"]
-                            AIAction["targetPiece"] = AIAction["targetPiece"]["color"] + AIAction["targetPiece"]["rank"]
-                            
                             if isValidAction:
                                 black_actions.append(AIAction)
                                 black_moves.append(sourcePos + "-" + targetPos)
@@ -343,8 +340,6 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                             AIAction["new_boardstate"] = new_boardstate
                             AIAction["corpList"] = corpList
                             AIAction["whiteMove"] = whiteMove
-                            AIAction["activePiece"] = AIAction["activePiece"]["color"] + AIAction["activePiece"]["rank"]
-                            AIAction["targetPiece"] = AIAction["targetPiece"]["color"] + AIAction["targetPiece"]["rank"]
                             
                             if isValidAction:
                                 if isSuccessfulAttack:
