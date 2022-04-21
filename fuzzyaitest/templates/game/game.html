@@ -35,6 +35,13 @@
 
 {% block body %}
     <div id="main-container" class="container">
+        <div class = "row">
+            <div class="col" style = " max-height: 700px;">
+                <div id="white-captured-con" class="d-flex-inline flex-row text-white">
+                    <p>AI captured pieces:</p>
+                </div>
+            </div>
+        </div>
         <div class="row">
             <div class="col-sm border border-dark bg-white">
                 <p class="text-center fs-4">Attacking</p>
@@ -45,28 +52,17 @@
                 <p class="text-center fs-4">Defending</p>
             </div>
     
-            <!-- Captured Pieces by each side -->
-            <div class="col" style = " max-height: 700px;">
-                <div id="white-captured-con" class="d-flex-inline flex-row text-white">
-                    <p>AI captured pieces:</p>
-                </div>
-                
-                <div id="my_board" style="width: 650px"></div>
+            <!-- Captured Pieces by each side / if need to re-implement pull code from sticky note  -->
             
-                <div id="black-captured-con" class="d-flex-inline flex-row text-white">
-                    <p>Player captured pieces:</p>
-                </div>
-            </div>
-    
+            
+            <div id="my_board" style="width: 650px"></div>
             <!-- Move Log Column -->
-            <div id="move_log" class="col-sm border border-dark bg-white overflow-auto sticky-bottom" style = " max-height: 700px;">
+            <div id="move_log" class="col-sm border border-dark bg-white overflow-auto" style = " max-height: 700px;">
                 <p class="text-center fs-4">Move Log</p>
             </div>
         
-            <!-- Button to trigger modal -->
-            <a data-toggle="modal" data-target="#myModal">
-                <button type="button" class = "btn btn-primary">Rules</button>
-            </a>
+            
+            
              <!-- Modal  -->
             <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-xl">
@@ -88,5 +84,28 @@
                 </div>
              </div>
         </div>
+        
+        <div class = "row">
+            <div class = "col">
+            <div id="black-captured-con" class="d-flex-inline flex-row text-white" style = "display: inline;">
+                <p>Player captured pieces:</p>
+            </div>
+            </div>
+        </div>
+        
     </div>
+   
+
+<div class = "container">
+    <div class ="row justify-content-center">
+         <!-- Button for rules modal -->
+        <a data-toggle="modal" data-target="#myModal">
+            <button type="button" class = "btn btn-primary btn-sm">Rules</button>
+         </a>
+        <!-- Buttons for in game options -->
+        <button type="button" class = "btn btn-success btn-sm">Delegate</button>
+        <button type="button" class = "btn btn-warning btn-sm">Pass</button>
+        <button type="button" class = "btn btn-danger btn-sm">Resign</button>
+    </div>
+</div>
 {% endblock body %}
