@@ -18,8 +18,8 @@ var $defending_piece = $("#defending-piece");
 var $opp_pieces = $("#white-captured-con");
 var $own_pieces = $("#black-captured-con");
 var $attack_result = $("#attack-result");
-var $modalTitle = $('#modal-title');
-var $modalBody = $('#modal-body');
+var $resModalTitle = $('#res-modal-title');
+var $resModalBody = $('#res-modal-body');
 
 // Local Gamestate Var Holders
 var local_boardstate = null;
@@ -559,6 +559,15 @@ socket.onmessage = (message) => {
         data.setup.forEach(pos => greenSquare(pos));
         data.movement.forEach(pos => greySquare(pos));
     }
+    else if(data.actionType=="PASS") {
+        local_corplist = data.corpList;
+        local_whiteMove = data.whiteMove;
+        local_readyToBlitz = data.readyToBlitz;
+
+        if (!local_whiteMove) {
+            startAITurn();
+        }
+    }
     // On AI_ACTION_REQ actionType
     else if(data.actionType=="AI_TURN_RES") {
         local_corplist = data.corpList;
@@ -607,10 +616,31 @@ $(document).on('click','#yesRes', () => {
     socket.send(JSON.stringify({"actionType": "RESIGN","result": "Black wins"}));
     $('#resignModal').modal('hide');
     $('#resignModal').data('bs.modal',null);
-    $modalTitle.html("Game over");
-    $modalBody.html("You have resigned from the game. You lose!");
+    $resModalTitle.html("Game over");
+    $resModalBody.html("You have resigned from the game. You lose!");
     $('#gameModal').modal({
         keyboard: false,
         backdrop: 'static'
     });
+});
+
+// Initial pass button click
+$(document).on('click','#pass', () => {
+    $('#passModal').modal({
+        keyboard: false,
+        backdrop: 'static'
+    });
+});
+
+// Choose not to pass
+$(document).on('click','#noPass', () => {
+    $('#passModal').modal('hide');
+    $('#passModal').data('bs.modal',null);
+});
+
+// Double down on passing
+$(document).on('click','#yesPass', () => {
+    socket.send(JSON.stringify({"actionType": "PASS", "isAIGame": local_isAIGame, "whiteMove": local_whiteMove}));
+    $('#passModal').modal('hide');
+    $('#passModal').data('bs.modal',null);
 });

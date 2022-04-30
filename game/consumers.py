@@ -87,6 +87,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 await self.attack_attempt(content)
             elif actionType == "HIGHLIGHT":
                 await self.highlight(content)
+            elif actionType == "PASS":
+                await self.pass_turn(content)
             elif actionType == "AI_TURN_REQ":
                 await self.ai_turn_req(content)
             elif actionType == "RESIGN":
@@ -304,6 +306,60 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             })
             print(f"{event['sender_channel_name']}\t-\tSending Highlight-Move")
     
+    async def pass_turn(self, payload):
+        try:
+            (whiteMove, corpList, readyToBlitz) = await self.pass_turn_db_handle(payload)
+            
+            await self.channel_layer.group_send(
+                str(self.game_id), 
+                {
+                    "type": "turn.pass",
+                    "actionType": "PASS",
+                    "whiteMove": whiteMove,
+                    "corpList": corpList,
+                    "readyToBlitz": readyToBlitz,
+                    'sender_channel_name': self.channel_name
+                }
+            )
+            print(f"{self.channel_name}\t-\tValidated & Processed PASS")
+        except BaseException:
+            tb = traceback.format_exc()
+            print(tb)
+        
+    async def turn_pass(self, event):
+        await self.send_json({
+            "actionType": event['actionType'],
+            "whiteMove": event['whiteMove'],
+            "corpList": event["corpList"],
+            "readyToBlitz": event["readyToBlitz"]
+        })
+        print(f"{event['sender_channel_name']}\t-\tSending PASS")
+    
+    @database_sync_to_async
+    def pass_turn_db_handle(self, payload):
+        # Find current game, toss update if doesn't exist for some reason
+        game = Game.objects.all().filter(id=self.game_id)[0]
+        if not game:
+            print("DB update failed, game not found")
+            return
+        
+        friendly = 'w' if game.whitemove else 'b'
+        enemy = 'b' if game.whitemove else 'w'
+        
+        if payload["whiteMove"] == game.whitemove:
+            for corp in game.corplist[friendly]:
+                game.corplist[friendly][corp]["command_authority_remaining"] = -999
+            for corp in game.corplist[enemy]:
+                game.corplist[enemy][corp]["command_authority_remaining"] = 1
+            game.whitemove = not game.whitemove  # Swaps players.
+            game.readytoblitz = []
+        
+        print("Saving game details")
+        game.save()
+        print("Successfully saved")
+        
+        return (game.whitemove, game.corplist, game.readytoblitz)
+        
     # Called on recieved request from front-end for an AI turn
     async def ai_turn_req(self, payload):
         try:

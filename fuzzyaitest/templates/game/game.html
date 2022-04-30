@@ -145,16 +145,34 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Pass Modal -->
+        <div class="modal fade" id="passModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="passModalTitle">Confirm Turn Pass</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p id="pass-modal-body">Are you sure you want to pass the rest of this turn?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" id="yesPass">Yes</button>
+                        <button class="btn btn-success" id="noPass">No</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Resign Modal -->
         <div class="modal fade" id="resignModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h4 class="modal-title" id="resignModalTitle">Confirm</h4>
+                        <h4 class="modal-title" id="resignModalTitle">Confirm Resign</h4>
                     </div>
                     <div class="modal-body">
-                        <p id="modal-body">Are you sure you want to resign this game?</p>
+                        <p id="res-modal-body">Are you sure you want to resign this game?</p>
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn-danger" id="yesRes">Yes</button>
@@ -168,7 +186,7 @@
         <div class ="row justify-content-around">
             <a data-toggle="modal" data-target="#ruleModal"><button type="button" class = "btn btn-primary btn-sm">Rules</button></a>
             <a data-toggle="modal" data-target="#delegateModal"><button type="button" class="btn btn-success btn-sm">Delegate</button></a>
-            <button type="button" class="btn btn-warning btn-sm">Pass</button>
+            <a data-toggle="modal" data-target="#passModal"><button type="pass" class="btn btn-warning btn-sm">Pass</button></a>
             <a data-toggle="modal" data-target="#resignModal"><button id="resign" type="button" class="btn btn-danger btn-sm">Resign</button></a>
         </div>
 
