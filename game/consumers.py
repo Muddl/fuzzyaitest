@@ -97,9 +97,9 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     
      # Helper function called when a new-move command is recieved, broadcasts move.new event to group, handled in move_new
     async def new_move(self, payload):
-        boardstate, whiteMove, corpList, readyToBlitz = await self.get_boardstate()
+        boardstate, whiteMove, corpList, readyToBlitz, white_captured, black_captured = await self.get_boardstate()
         
-        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList, readyToBlitz=readyToBlitz)
+        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList, readyToBlitz=readyToBlitz, white_captured=white_captured, black_captured=black_captured)
         
         isValidAction, new_boardstate, new_corpList, new_whiteMove, readyToBlitz = board.processAction(payload)
         
@@ -141,11 +141,11 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     
     # Helper function called when a new-move command is recieved, broadcasts move.new event to group, handled in move_new
     async def attack_attempt(self, payload):
-        boardstate, whiteMove, corpList, readyToBlitz = await self.get_boardstate()
+        boardstate, whiteMove, corpList, readyToBlitz, white_captured, black_captured = await self.get_boardstate()
         
-        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList, readyToBlitz=readyToBlitz)
+        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList, readyToBlitz=readyToBlitz, white_captured=white_captured, black_captured=black_captured)
         
-        isValidAction, isSuccessfulAttack, new_boardstate, roll_val, corpList, whiteMove, isBlitz, readyToBlitz, isEndGame, kingDead = board.processAction(payload)
+        isValidAction, isSuccessfulAttack, new_boardstate, roll_val, corpList, whiteMove, isBlitz, readyToBlitz, isEndGame, kingDead, white_captured, black_captured = board.processAction(payload)
         
         if isValidAction:
             if isSuccessfulAttack:
@@ -164,6 +164,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                             "whiteMove": whiteMove,
                             'isBlitz': isBlitz,
                             'kingDead': kingDead,
+                            'white_captured': white_captured,
+                            'black_captured': black_captured,
                             "activePiece": payload["activePiece"],
                             "targetPiece": payload["targetPiece"],
                             'sender_channel_name': self.channel_name
@@ -183,6 +185,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                             "corpList": corpList,
                             "whiteMove": whiteMove,
                             'isBlitz': isBlitz,
+                            'white_captured': white_captured,
+                            'black_captured': black_captured,
                             "activePiece": payload["activePiece"],
                             "targetPiece": payload["targetPiece"],
                             'sender_channel_name': self.channel_name
@@ -212,7 +216,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     
     # Pair handler of new_move(), recieves the event broadcast request & sends relevent message
     async def attempt_attack(self, event):
-        if 'isSuccessfulAttack' in event:
+        if event['isSuccessfulAttack'] == True:
             if 'kingDead' in event:
                 print(f"{event['sender_channel_name']}\t-\tSending Attempt-Attack as Successful [END_OF_GAME]")
                 await self.send_json({
@@ -225,11 +229,13 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                     "whiteMove": event["whiteMove"],
                     'isBlitz': event["isBlitz"],
                     'kingDead': event["kingDead"],
+                    'white_captured': event["white_captured"],
+                    'black_captured': event["black_captured"],
                     "activePiece": event["activePiece"],
                     "targetPiece": event["targetPiece"],
                     # "pgn": event["pgn"],
                 })
-                await self.updateEOG(event["new_boardstate"], event["corpList"], event["whiteMove"], event["readyToBlitz"], event['kingDead']) #,event["pgn"])
+                await self.updateEOG(event["new_boardstate"], event["corpList"], event["whiteMove"], event["readyToBlitz"], event['kingDead'], event["white_captured"], event["black_captured"]) #,event["pgn"])
             else:
                 print(f"{event['sender_channel_name']}\t-\tSending Attempt-Attack as Successful")
                 await self.send_json({
@@ -241,11 +247,13 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                     "corpList": event["corpList"],
                     "whiteMove": event["whiteMove"],
                     'isBlitz': event["isBlitz"],
+                    'white_captured': event["white_captured"],
+                    'black_captured': event["black_captured"],
                     "activePiece": event["activePiece"],
                     "targetPiece": event["targetPiece"],
                     # "pgn": event["pgn"],
                 })
-                await self.update(event["new_boardstate"], event["corpList"], event["whiteMove"], event["readyToBlitz"]) #,event["pgn"])
+                await self.updateSuccessAttack(event["new_boardstate"], event["corpList"], event["whiteMove"], event["readyToBlitz"], event["white_captured"], event["black_captured"]) #,event["pgn"])
         else:
             print(f"{event['sender_channel_name']}\t-\tSending Attempt-Attack as Failed")
             await self.send_json({
@@ -263,9 +271,9 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             await self.update(event["new_boardstate"], event["corpList"], event["whiteMove"], event["readyToBlitz"]) #,event["pgn"])
         
     async def highlight(self, payload):
-        boardstate, whiteMove, corpList, readyToBlitz = await self.get_boardstate()
+        boardstate, whiteMove, corpList, readyToBlitz, white_captured, black_captured  = await self.get_boardstate()
         
-        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList, readyToBlitz=readyToBlitz)
+        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList, readyToBlitz=readyToBlitz, white_captured=white_captured, black_captured=black_captured)
         
         isValidAction, in_range, setup, movement = board.processAction(payload)
         
@@ -305,15 +313,17 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             whiteMove = False
             corpList = {}
             readyToBlitz = []
+            white_captured = []
+            black_captured = []
             if (not whiteMove and payload["isAIGame"]):
                 black_actions = []
                 black_moves = []
                 while whiteMove == False and game_ended_flag == False:
-                    currentBoardstate, currentWhiteMove, currentCorpList, readyToBlitz = await self.get_boardstate()
+                    currentBoardstate, currentWhiteMove, currentCorpList, readyToBlitz, white_captured, black_captured  = await self.get_boardstate()
                     
-                    AIAction = produceAction(currentBoardstate, currentWhiteMove, currentCorpList, readyToBlitz)
+                    AIAction = produceAction(currentBoardstate, currentWhiteMove, currentCorpList, readyToBlitz, white_captured, black_captured)
                     
-                    board = Boardstate(boardstate=currentBoardstate, whiteMove=currentWhiteMove, corpList=currentCorpList, readyToBlitz=readyToBlitz)
+                    board = Boardstate(boardstate=currentBoardstate, whiteMove=currentWhiteMove, corpList=currentCorpList, readyToBlitz=readyToBlitz, white_captured=white_captured, black_captured=black_captured)
                     
                     match AIAction["actionType"]:
                         case "MOVEMENT":
@@ -331,7 +341,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                                 print(f"{self.channel_name}\t-\tInvalid AI Movement")
                                 
                         case "ATTACK_ATTEMPT":
-                            isValidAction, isSuccessfulAttack, new_boardstate, roll_val, corpList, whiteMove, isBlitz, readyToBlitz, isEndGame, kingDead = board.processAction(AIAction)
+                            isValidAction, isSuccessfulAttack, new_boardstate, roll_val, corpList, whiteMove, isBlitz, readyToBlitz, isEndGame, kingDead, white_captured, black_captured = board.processAction(AIAction)
                             
                             sourcePos = AIAction["activePiece"]["pos"]
                             targetPos = AIAction["targetPiece"]["pos"]
@@ -343,6 +353,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                             AIAction["new_boardstate"] = new_boardstate
                             AIAction["corpList"] = corpList
                             AIAction["whiteMove"] = whiteMove
+                            AIAction["white_captured"] = white_captured
+                            AIAction["black_captured"] = black_captured
                             
                             if isValidAction:
                                 if isSuccessfulAttack:
@@ -351,11 +363,11 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                                         AIAction["kingDead"] = kingDead
                                         black_actions.append(AIAction)
                                         black_moves.append(sourcePos + "-" + targetPos)
-                                        await self.updateEOG(new_boardstate, corpList, whiteMove, readyToBlitz, kingDead)
+                                        await self.updateEOG(new_boardstate, corpList, whiteMove, readyToBlitz, kingDead, white_captured, black_captured)
                                     else:
                                         black_actions.append(AIAction)
                                         black_moves.append(sourcePos + "-" + targetPos)
-                                        await self.update(new_boardstate, corpList, whiteMove, readyToBlitz)
+                                        await self.updateSuccessAttack(new_boardstate, corpList, whiteMove, readyToBlitz, white_captured, black_captured)
                                 else:
                                     black_actions.append(AIAction)
                                     black_moves.append("")
@@ -377,6 +389,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                             "whiteMove": whiteMove,
                             "corpList": corpList,
                             "readyToBlitz": readyToBlitz,
+                            'white_captured': white_captured,
+                            'black_captured': black_captured,
                             'sender_channel_name': self.channel_name
                         }
                     )
@@ -393,6 +407,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                             "whiteMove": whiteMove,
                             "corpList": corpList,
                             "readyToBlitz": readyToBlitz,
+                            'white_captured': white_captured,
+                            'black_captured': black_captured,
                             'sender_channel_name': self.channel_name
                         }
                     )
@@ -412,6 +428,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 "whiteMove": event["whiteMove"],
                 "corpList": event["corpList"],
                 "readyToBlitz": event["readyToBlitz"],
+                'white_captured': event["white_captured"],
+                'black_captured': event["black_captured"],
             })
         print(f"{event['sender_channel_name']}\t-\tSending AI_TURN_REQ")
     
@@ -453,7 +471,30 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         
     # Called after every move_new & attempt_action JSON is sent to persist gamestate to DB
     @database_sync_to_async
-    def updateEOG(self, new_boardstate, corplist, whiteMove, readyToBlitz, kingDead): # , pgn):
+    def updateSuccessAttack(self, new_boardstate, corplist, whiteMove, readyToBlitz, white_captured, black_captured): # , pgn):
+        # Find current game, toss update if doesn't exist for some reason
+        game = Game.objects.all().filter(id=self.game_id)[0]
+        if not game:
+            print("DB update failed, game not found")
+            return
+        
+        # Replace existing boardstate & PGN with updated version
+        game.boardstate = new_boardstate
+        game.corplist = corplist
+        game.whitemove = whiteMove
+        game.readytoblitz = readyToBlitz
+        game.white_captured = white_captured
+        game.black_captured = black_captured
+        # game.pgn = pgn
+        
+        # Persist transaction
+        print("Saving game details")
+        game.save()
+        print("Successfully saved")
+        
+    # Called after every move_new & attempt_action JSON is sent to persist gamestate to DB
+    @database_sync_to_async
+    def updateEOG(self, new_boardstate, corplist, whiteMove, readyToBlitz, kingDead, white_captured, black_captured): # , pgn):
         # Find current game, toss update if doesn't exist for some reason
         game = Game.objects.all().filter(id=self.game_id)[0]
         if not game or game.status == 3:
@@ -464,6 +505,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         game.corplist = corplist
         game.whitemove = whiteMove
         game.readytoblitz = readyToBlitz
+        game.white_captured = white_captured
+        game.black_captured = black_captured
         # game.pgn = pgn
         
         # End game
@@ -496,4 +539,4 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def get_boardstate(self):
         game = Game.objects.all().filter(id=self.game_id)[0]
-        return game.boardstate, game.whitemove, game.corplist, game.readytoblitz
+        return game.boardstate, game.whitemove, game.corplist, game.readytoblitz, game.white_captured, game.black_captured

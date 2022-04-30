@@ -2503,16 +2503,16 @@ def get_movesets_per_board_state(board_state):
     return _df.sort_values(by=['capture_probability'], ascending=[False]) #HERE 
 
 
-def get_possible_moveset_per_piece(position, piece, team, board_state, whiteMove, corpList, readyToBlitz):
+def get_possible_moveset_per_piece(position, piece, team, board_state, whiteMove, corpList, readyToBlitz, white_captured, black_captured):
     if team == 'b':
         available_squares = get_black_squares_available(corpList)
         corp_string = get_black_corp(position,corpList)
-        board_state_obj = Boardstate(board_state, False, corpList, readyToBlitz)
+        board_state_obj = Boardstate(board_state, False, corpList, readyToBlitz, white_captured, black_captured)
         
     else:
         available_squares = get_white_squares_available(corpList)
         corp_string = get_white_corp(position, corpList)
-        board_state_obj = Boardstate(board_state, True, corpList, readyToBlitz)
+        board_state_obj = Boardstate(board_state, True, corpList, readyToBlitz, white_captured, black_captured)
 
 
     #print(available_squares)
@@ -2533,7 +2533,7 @@ def get_possible_moveset_per_piece(position, piece, team, board_state, whiteMove
         return(move_list)
 
 
-def parse_board_state(board_state, iteration, corps_list, initial_piece_reference, list_of_corps_assignments, whiteMove, corpList, readyToBlitz):
+def parse_board_state(board_state, iteration, corps_list, initial_piece_reference, list_of_corps_assignments, whiteMove, corpList, readyToBlitz, white_captured, black_captured):
     df_converted_board_state = pd.DataFrame(
         columns=['piece_ID', 'piece', 'piece_type', 'color', 'starting_position', 'corps', 'moveset', 'possible_moves', ])
     # get all possible movesets per piece (and respective positions)
@@ -2558,7 +2558,7 @@ def parse_board_state(board_state, iteration, corps_list, initial_piece_referenc
             _piece_type = _piece[1].lower()
             _team = _piece[0]
             _moveset = get_possible_moveset_per_piece(
-                _starting_position, _piece_type, _team, board_state, whiteMove, corpList, readyToBlitz)
+                _starting_position, _piece_type, _team, board_state, whiteMove, corpList, readyToBlitz, white_captured, black_captured)
             try:
                 _possible_moves = len(_moveset)
             except:
@@ -2588,7 +2588,7 @@ def parse_board_state(board_state, iteration, corps_list, initial_piece_referenc
 
 
 
-def produceAction(boardstate, whiteMove, corpList, readyToBlitz):
+def produceAction(boardstate, whiteMove, corpList, readyToBlitz, white_captured, black_captured):
     current_board_state = boardstate #set to board_state_from_frontend
     list_of_corps_assignments = get_list_of_initial_corps_assignments(current_board_state)
     
@@ -2597,7 +2597,7 @@ def produceAction(boardstate, whiteMove, corpList, readyToBlitz):
     command_list = [1, 2, 3]
     i = 1
     while len(command_list) > 2:
-        current_turn_movesets = parse_board_state(current_board_state, i, command_list, initial_piece_reference, list_of_corps_assignments, whiteMove, corpList, readyToBlitz)
+        current_turn_movesets = parse_board_state(current_board_state, i, command_list, initial_piece_reference, list_of_corps_assignments, whiteMove, corpList, readyToBlitz, white_captured, black_captured)
         move_to_send = current_turn_movesets.iloc[0]['starting_position_attack'] + '-' + current_turn_movesets.iloc[0]['potential_position']
         command_list.remove(current_turn_movesets.iloc[0][3])
         i += 1

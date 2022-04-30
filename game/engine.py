@@ -279,7 +279,7 @@ class Piece:
 
 class Boardstate:
     # Initializes an empty board and game in code (not gui)
-    def __init__(self, boardstate: Dict[str, str], whiteMove: bool, corpList, readyToBlitz):
+    def __init__(self, boardstate: Dict[str, str], whiteMove: bool, corpList, readyToBlitz, white_captured, black_captured):
         # Game board from white's perspective
         # NOTE - I've seen this done with just strings, numbers, etc.
         # All are probably more efficient but a pain to read and work with
@@ -300,6 +300,8 @@ class Boardstate:
         self.whiteMove = whiteMove  # Keeps track of whose turn it is
         self.kingDead = None # Initially no kings dead  
         self.readyToBlitz = readyToBlitz  # Stores the traits of knights ready to blitz
+        self.white_captured = white_captured
+        self.black_captured = black_captured
         self.gameHistory = []  # Keeps a history of the actions in a game.
         
     # Function that moves the pieces, adds it to the game history, and swaps players - IMPORTANT
@@ -391,8 +393,20 @@ class Boardstate:
                             if outcome and activeRank != "R": # On successful capture
                                 curPiece = self.board.pop(activePos)  # Sets the square that the piece is on to empty (the piece is "lifted" from the table)
                                 self.board[targetPos] = curPiece  # "Places" the piece onto that square
+                                if enemy == 'b':
+                                    self.black_captured.append(targetRank)
+                                    print(f'Captured a black piece: {self.black_captured}')
+                                elif enemy == 'w':
+                                    self.white_captured.append(targetRank)
+                                    print(f'Captured a white piece: {self.white_captured}')
                             elif outcome and activeRank == "R":
                                 self.board.pop(targetPos)
+                                if enemy == 'b':
+                                    self.black_captured.append(targetRank)
+                                    print(f'Captured a black piece: {self.black_captured}')
+                                elif enemy == 'w':
+                                    self.white_captured.append(targetRank)
+                                    print(f'Captured a white piece: {self.white_captured}')
                             
                             # Update corpList to reflect boardstate changes
                             # Remove successfully attacked pieces from the corpList & delegate under_command as needed
@@ -445,11 +459,11 @@ class Boardstate:
                                 self.kingDead = activeColor # Set to proper color
                                 isEndGame = True
                             
-                            return True, outcome, self.board, roll_val, self.corpLists, self.whiteMove, isBlitz, self.readyToBlitz, isEndGame, self.kingDead
+                            return True, outcome, self.board, roll_val, self.corpLists, self.whiteMove, isBlitz, self.readyToBlitz, isEndGame, self.kingDead, self.white_captured, self.black_captured
                     else:
-                        return False, False, None, None, None, False, False, None, False, None
+                        return False, False, None, None, None, False, False, None, False, None, None, None
                 else:
-                    return False, False, None, None, None, False, False, None, False, None
+                    return False, False, None, None, None, False, False, None, False, None, None, None
             except BaseException:
                 tb = traceback.format_exc()
                 print(tb)

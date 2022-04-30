@@ -507,12 +507,12 @@ socket.onmessage = (message) => {
             // Set up the captured pieces visualization
             if (local_black_captured != null) {
                 local_black_captured.forEach((piece) => {
-                    $blackCapturedCon.append($('<img>', {src: `..\chessboard\\b${piece}.png`}))
+                    $blackCapturedCon.append($('<img>', {src: `../static/chessboard\\b${piece}.png`, width: "40px", height: "40px"}))
                 });
             }
             if (local_white_captured != null) {
                 local_white_captured.forEach((piece) => {
-                    $whiteCapturedCon.append($('<img>', {src: `..\chessboard\\w${piece}.png`}))
+                    $whiteCapturedCon.append($('<img>', {src: `../static/chessboard\\w${piece}.png`, width: "40px", height: "40px"}))
                 });
             }
 
