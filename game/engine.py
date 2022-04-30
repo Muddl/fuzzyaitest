@@ -171,7 +171,7 @@ INITIAL_CORP_LIST = {
                     "corp" : "kingCorp"
                 }
             ],
-            "command_authority_remaining": 1
+            "command_authority_remaining": -999
         },
         "leftBishopCorp": {
             "leader": {
@@ -206,7 +206,7 @@ INITIAL_CORP_LIST = {
                     "corp" : "leftBishopCorp"
                 }
             ],
-            "command_authority_remaining": 1
+            "command_authority_remaining": -999
         },
         "rightBishopCorp": {
             "leader": {
@@ -241,7 +241,7 @@ INITIAL_CORP_LIST = {
                     "corp" : "rightBishopCorp"
                 }
             ],
-            "command_authority_remaining": 1
+            "command_authority_remaining": -999
         }
     }
 }

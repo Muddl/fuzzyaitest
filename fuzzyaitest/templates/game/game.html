@@ -38,11 +38,12 @@
         <!-- Opponent Metadata -->
         <div class="d-flex flex-row justify-content-between">
             <!-- Opponent Captured Pieces -->
-            <div id="opp-captured-con" class="d-flex flex-fill flex-row justify-content-start align-items-center text-white">
+            <div class="d-flex flex-row justify-content-start align-items-center text-white" style="max-width: 50%">
                 <p class="mb-0">AI captured pieces:</p>
+                <div id="opp-captured-con" class="d-flex flex-wrap text-white"></div>
             </div>
             <!-- Opponent Remaining Command Auth -->
-            <div class="d-flex flex-column flex-fill justify-content-end">
+            <div class="d-flex flex-column flex-fill justify-content-end" style="max-width: 50%">
                 <p class="text-white">Authority Remaining:</p>
                 <div id="opp-command-auth" class="d-flex flex-row justify-content-around text-white">
                     <p id="oppLBAuth">Left Bishop: #</p>
@@ -50,8 +51,7 @@
                     <p id="oppRBAuth">Right Bishop: #</p>
                 </div>
             </div> 
-        </div>
-            
+        </div> 
 
         <!-- Center Game Row -->
         <div class="row">
@@ -69,7 +69,7 @@
             <div id="my_board" style="width: 650px"></div>
 
             <!-- Move Log -->
-            <div id="move_log" class="col-sm border border-dark bg-white overflow-auto" style = " max-height: 700px;">
+            <div id="move_log" class="col-sm border border-dark bg-white overflow-auto" style = "max-height: 700px;">
                 <p class="text-center fs-4">Move Log</p>
             </div>
         </div>
@@ -77,11 +77,12 @@
         <!-- Player Metadata -->
         <div class="d-flex flex-row justify-content-between">
             <!-- Player Captured Pieces -->
-            <div id="player-captured-con" class="d-flex flex-fill flex-row justify-content-start align-items-center text-white">
+            <div class="d-flex flex-row justify-content-start align-items-center text-white" style="max-width: 50%">
                 <p class="mb-0">Player captured pieces:</p>
+                <div id="player-captured-con" class="d-flex flex-wrap text-white"></div>
             </div>
             <!-- Player Remaining Command Auth -->
-            <div class="d-flex flex-column flex-fill justify-content-end">
+            <div class="d-flex flex-column flex-fill justify-content-end" style="max-width: 50%">
                 <p class="text-white">Authority Remaining:</p>
                 <div id="player-command_auth" class="d-flex flex-row justify-content-around text-white">
                     <p id="playerLBAuth">Left Bishop: #</p>
@@ -135,26 +136,18 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h4 class="modal-title" id="delegateModalTitle">King Delegation Action</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                     </div>
-                    <div class="modal-body">
-                        <div class="row justify-content-around">
+                    <form>
+                        <div class="modal-body">
                             <!-- First dropdown selects the under_command of kingCorp to delegate (once per turn) -->
-                            <div class="dropdown">
-                                <button class="btn btn-secondary dropdown-toggle" type="button" id="kingDelegateMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    Which Unit
-                                </button>
-                                <div class="dropdown-menu" aria-labelledby="kingDelegateMenuButton"></div>
+                            <div class="form-group" id="kingDelegateMenuContents">
                             </div>
                             <!-- Second the target delegation corp (only bishops, limit 6 under_command) -->
-                            <div class="dropdown">
-                                <button class="btn btn-secondary dropdown-toggle" type="button" id="targetCorpMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    Target Corp
-                                </button>
-                                <div class="dropdown-menu" aria-labelledby="targetCorpMenuButton"></div>
+                            <div class="form-group" id="targetCorpMenuContents">
                             </div>
-                            <!-- Indicators to show when/why delegations not allowed -->
                         </div>
-                    </div>
+                    </form>
                     <div class="modal-footer">
                         <!-- Add delegation confirmation button -->
                         <button class="btn btn-danger" id="confirmDelegate">Confirm</button>
@@ -202,8 +195,8 @@
         <!-- Bottom Button Row -->
         <div class ="row justify-content-around">
             <a data-toggle="modal" data-target="#ruleModal"><button type="button" class = "btn btn-primary btn-sm">Rules</button></a>
-            <a data-toggle="modal" data-target="#delegateModal"><button type="button" class="btn btn-success btn-sm">Delegate</button></a>
-            <a data-toggle="modal" data-target="#passModal"><button type="pass" class="btn btn-warning btn-sm">Pass</button></a>
+            <a data-toggle="modal" data-target="#delegateModal"><button id="delegate" type="button" class="btn btn-success btn-sm">Delegate</button></a>
+            <a data-toggle="modal" data-target="#passModal"><button id="pass" type="button" class="btn btn-warning btn-sm">Pass</button></a>
             <a data-toggle="modal" data-target="#resignModal"><button id="resign" type="button" class="btn btn-danger btn-sm">Resign</button></a>
         </div>
 

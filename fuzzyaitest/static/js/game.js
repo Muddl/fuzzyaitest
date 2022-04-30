@@ -28,6 +28,8 @@ var $own_pieces = $("#black-captured-con");
 var $attack_result = $("#attack-result");
 var $resModalTitle = $('#res-modal-title');
 var $resModalBody = $('#res-modal-body');
+var $kingDelegateMenuContents = $("#kingDelegateMenuContents");
+var $targetCorpMenuContents = $("#targetCorpMenuContents");
 
 // Local Gamestate Var Holders
 var local_boardstate = null;
@@ -44,42 +46,93 @@ var local_delegation_ready = null;
 
 const updateAuthRemaining = () => {
     // First iterate through local_corplist and create a sublist of remaining command authorities
-    const sublist_of_auth_remain = [];
+    const sublist_of_auth_remain = [[], []];
     Object.entries(local_corplist.w).forEach((corpKey) => {
-        sublist_of_auth_remain.push(['w', corpKey[0], corpKey[1].command_authority_remaining]);
+        sublist_of_auth_remain[0].push([corpKey[0], corpKey[1].command_authority_remaining]);
     });
     Object.entries(local_corplist.b).forEach((corpKey) => {
-        sublist_of_auth_remain.push(['b', corpKey[0], corpKey[1].command_authority_remaining]);
+        sublist_of_auth_remain[1].push([corpKey[0], corpKey[1].command_authority_remaining]);
     });
-    console.log(sublist_of_auth_remain);
+
     // Then for each corp p tag, replace any integers or # with the relevant value in local_corplist
-    sublist_of_auth_remain.forEach((auth_remain_array) => {
-        if (auth_remain_array[0] == 'w') {
-            switch (auth_remain_array[1]) {
-                case "kingCorp":
-                    $playerKAuth.text((`King: ${auth_remain_array[2]}`));
-                    break;
-                case "leftBishopCorp":
-                    $playerLBAuth.text((`Left Bishop: ${auth_remain_array[2]}`));
-                    break;
-                case "rightBishopCorp":
-                    $playerRBAuth.text((`Right Bishop: ${auth_remain_array[2]}`));
-                    break;
-            };
-        } else if (auth_remain_array[0] == 'b') {
-            switch (auth_remain_array[1]) {
-                case "kingCorp":
-                    $oppKAuth.text((`King: ${auth_remain_array[2]}`));
-                    break;
-                case "leftBishopCorp":
-                    $oppLBAuth.text((`Left Bishop: ${auth_remain_array[2]}`));
-                    break;
-                case "rightBishopCorp":
-                    $oppRBAuth.text((`Right Bishop: ${auth_remain_array[2]}`));
-                    break;
-            };
+    const detected_w_corps = [];
+    const detected_b_corps = [];
+
+    sublist_of_auth_remain[0].forEach((auth_remain_array) => {
+        switch (auth_remain_array[0]) {
+            case "kingCorp":
+                detected_w_corps.push("kingCorp");
+                if (auth_remain_array[1] == -999) {
+                    $playerKAuth.text((`King: 0`));
+                } else {
+                    $playerKAuth.text((`King: ${auth_remain_array[1]}`));
+                }
+                break;
+            case "leftBishopCorp":
+                detected_w_corps.push("leftBishopCorp");
+                if (auth_remain_array[1] == -999) {
+                    $playerLBAuth.text((`Left Bishop: 0`));
+                } else {
+                    $playerLBAuth.text((`Left Bishop: ${auth_remain_array[1]}`));
+                }
+                break;
+            case "rightBishopCorp":
+                detected_w_corps.push("rightBishopCorp");
+                if (auth_remain_array[1] == -999) {
+                    $playerRBAuth.text((`Right Bishop: 0`));
+                } else {
+                    $playerRBAuth.text((`Right Bishop: ${auth_remain_array[1]}`));
+                }
+                break;
         };
     });
+    if (!detected_w_corps.includes('kingCorp')) {
+        $playerKAuth.text((`King: Captured`));
+    }
+    if (!detected_w_corps.includes('leftBishopCorp')) {
+        $playerLBAuth.text((`Left Bishop: Captured`));
+    }
+    if (!detected_w_corps.includes('rightBishopCorp')) {
+        $playerRBAuth.text((`Right Bishop: Captured`));
+    };
+
+    sublist_of_auth_remain[1].forEach((auth_remain_array) => {
+        switch (auth_remain_array[0]) {
+            case "kingCorp":
+                detected_b_corps.push("kingCorp");
+                if (auth_remain_array[1] == -999) {
+                    $oppKAuth.text((`King: 0`));
+                } else {
+                    $oppKAuth.text((`King: ${auth_remain_array[1]}`));
+                }
+                break;
+            case "leftBishopCorp":
+                detected_b_corps.push("leftBishopCorp");
+                if (auth_remain_array[1] == -999) {
+                    $oppLBAuth.text((`Left Bishop: 0`));
+                } else {
+                    $oppLBAuth.text((`Left Bishop: ${auth_remain_array[1]}`));
+                }
+                break;
+            case "rightBishopCorp":
+                detected_b_corps.push("rightBishopCorp");
+                if (auth_remain_array[1] == -999) {
+                    $oppRBAuth.text((`Right Bishop: 0`));
+                } else {
+                    $oppRBAuth.text((`Right Bishop: ${auth_remain_array[1]}`));
+                }
+                break;
+        };
+    });
+    if (!detected_b_corps.includes('kingCorp')) {
+        $oppKAuth.text((`King: Captured`));
+    }
+    if (!detected_b_corps.includes('leftBishopCorp')) {
+        $oppLBAuth.text((`Left Bishop: Captured`));
+    }
+    if (!detected_b_corps.includes('rightBishopCorp')) {
+        $oppRBAuth.text((`Right Bishop: Captured`));
+    };
 };
 
 const findCorpOfPiece = (source, piece) => {
@@ -614,6 +667,17 @@ socket.onmessage = (message) => {
         data.setup.forEach(pos => greenSquare(pos));
         data.movement.forEach(pos => greySquare(pos));
     }
+    else if(data.actionType=="DELEGATE") {
+        local_corplist = data.corpList;
+        local_whiteMove = data.whiteMove;
+        local_readyToBlitz = data.readyToBlitz;
+
+        updateAuthRemaining(local_corplist);
+
+        if (!local_whiteMove) {
+            startAITurn();
+        }
+    }
     else if(data.actionType=="PASS") {
         local_corplist = data.corpList;
         local_whiteMove = data.whiteMove;
@@ -651,9 +715,103 @@ socket.onmessage = (message) => {
             }
         });
         board.position(data.new_boardstate, false);
+
+        updateAuthRemaining(local_corplist);
     }
 };
 
+// ***** DELEGATE MODAL EVENT HANDLERS ***
+// Initial delegate button click
+$(document).on('click','#delegate', () => {
+    $('#delegateModal').modal({
+        keyboard: false,
+        backdrop: 'static'
+    });
+
+    const kingDelegatables = [];
+    $kingDelegateMenuContents.empty();
+    $kingDelegateMenuContents.append($('<h5>').text('Which Piece'));
+    if (local_whiteMove) {
+        Object.entries(local_corplist.w).forEach((corpKey) => {
+            if (corpKey[0] == 'kingCorp') {
+                corpKey[1].under_command.forEach((piece) => {
+                    kingDelegatables.push(piece);
+                });
+            };
+        });
+    } else {
+        Object.entries(local_corplist.b).forEach((corpKey) => {
+            if (corpKey[0] == 'kingCorp') {
+                corpKey[1].under_command.forEach((piece) => {
+                    kingDelegatables.push(piece);
+                });
+            };
+        });
+    };
+    kingDelegatables.forEach((piece) => {
+        const $interimCheckGroup = $('<div>', {class: "form-check"});
+        $interimCheckGroup.append($('<input>', {class: "form-check-input", type:"radio", name:`kingDelegateablesRadio`, id:`${piece.color}${piece.rank}-radio`, value:JSON.stringify(piece)}));
+        $interimCheckGroup.append($('<label>', {class: "form-check-label", for:`${piece.color}${piece.rank}-radio`}).text(`${piece.color}${piece.rank} at ${piece.pos}`));
+        $kingDelegateMenuContents.append($interimCheckGroup);
+    });
+    
+    const targetCorps = [];
+    $targetCorpMenuContents.empty();
+    $targetCorpMenuContents.append($('<h5>').text('Which Destination Corp'));
+    if (local_whiteMove) {
+        Object.entries(local_corplist.w).forEach((corpKey) => {
+            if (corpKey[0] != 'kingCorp' && corpKey[1].under_command.length <= 6) {
+                targetCorps.push(corpKey[0]);
+            };
+        });
+    } else {
+        Object.entries(local_corplist.b).forEach((corpKey) => {
+            if (corpKey[0] != 'kingCorp' && corpKey[1].under_command.length <= 6) {
+                targetCorps.push(corpKey[0]);
+            };
+        });
+    };
+    targetCorps.forEach((corp) => {
+        const $interimCheckGroup = $('<div>', {class: "form-check"});
+        $interimCheckGroup.append($('<input>', {class: "form-check-input", type:"radio", name:`targetCorpRadio`, id:`${corp}-radio`, value:corp}));
+        $interimCheckGroup.append($('<label>', {class: "form-check-label", for:`${corp}-radio`}).text(corp));
+        $targetCorpMenuContents.append($interimCheckGroup);
+    });
+});
+
+// 
+$(document).on('click','#confirmDelegate', () => {
+    const delegatedPiece = $('input[name="kingDelegateablesRadio"]').filter(':checked').val();
+    const targetCorp = $('input[name="targetCorpRadio"]').filter(':checked').val();
+    console.log(delegatedPiece);
+    socket.send(JSON.stringify({"actionType": "DELEGATE", "isAIGame": local_isAIGame, "whiteMove": local_whiteMove, "delegatedPiece": delegatedPiece, "targetCorp": targetCorp}));
+    $('#delegateModal').modal('hide');
+    $('#delegateModal').data('bs.modal',null);
+});
+
+// ***** PASS MODAL EVENT HANDLERS ***
+// Initial pass button click
+$(document).on('click','#pass', () => {
+    $('#passModal').modal({
+        keyboard: false,
+        backdrop: 'static'
+    });
+});
+
+// Choose not to pass
+$(document).on('click','#noPass', () => {
+    $('#passModal').modal('hide');
+    $('#passModal').data('bs.modal',null);
+});
+
+// Double down on passing
+$(document).on('click','#yesPass', () => {
+    socket.send(JSON.stringify({"actionType": "PASS", "isAIGame": local_isAIGame, "whiteMove": local_whiteMove}));
+    $('#passModal').modal('hide');
+    $('#passModal').data('bs.modal',null);
+});
+
+// ***** RESIGN MODAL EVENT HANDLERS ***
 // Initial resign button click
 $(document).on('click','#resign', () => {
     $('#resignModal').modal({
@@ -679,25 +837,4 @@ $(document).on('click','#yesRes', () => {
         keyboard: false,
         backdrop: 'static'
     });
-});
-
-// Initial pass button click
-$(document).on('click','#pass', () => {
-    $('#passModal').modal({
-        keyboard: false,
-        backdrop: 'static'
-    });
-});
-
-// Choose not to pass
-$(document).on('click','#noPass', () => {
-    $('#passModal').modal('hide');
-    $('#passModal').data('bs.modal',null);
-});
-
-// Double down on passing
-$(document).on('click','#yesPass', () => {
-    socket.send(JSON.stringify({"actionType": "PASS", "isAIGame": local_isAIGame, "whiteMove": local_whiteMove}));
-    $('#passModal').modal('hide');
-    $('#passModal').data('bs.modal',null);
 });

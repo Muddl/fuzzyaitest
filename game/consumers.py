@@ -1,3 +1,4 @@
+from threading import local
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 
@@ -5,7 +6,7 @@ from .models import Game
 from .engine import Boardstate
 from .testAI import produceAction
 
-import traceback
+import traceback, json
 
 class GameConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -80,6 +81,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         actionType = content.get("actionType")
         isAIGame = content.get("isAIGame")
         print("Received JSON over websockets of type " + actionType + " with an isAIGame bool of " + str(isAIGame))
+        
         try:
             if actionType == "MOVEMENT":
                 await self.new_move(content)
@@ -87,6 +89,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 await self.attack_attempt(content)
             elif actionType == "HIGHLIGHT":
                 await self.highlight(content)
+            elif actionType == "DELEGATE":
+                await self.delegate(content)
             elif actionType == "PASS":
                 await self.pass_turn(content)
             elif actionType == "AI_TURN_REQ":
@@ -305,6 +309,76 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 "movement": event["movement"]
             })
             print(f"{event['sender_channel_name']}\t-\tSending Highlight-Move")
+            
+    async def delegate(self, payload):
+        try:
+            (whiteMove, corpList, readyToBlitz) = await self.delegate_db_handle(payload)
+            
+            await self.channel_layer.group_send(
+                str(self.game_id), 
+                {
+                    "type": "send.delegate",
+                    "actionType": "DELEGATE",
+                    "whiteMove": whiteMove,
+                    "corpList": corpList,
+                    "readyToBlitz": readyToBlitz,
+                    'sender_channel_name': self.channel_name
+                }
+            )
+            print(f"{self.channel_name}\t-\tValidated & Processed DELEGATE")
+        except BaseException:
+            tb = traceback.format_exc()
+            print(tb)
+    
+    async def send_delegate(self, event):
+        await self.send_json({
+            "actionType": event['actionType'],
+            "whiteMove": event['whiteMove'],
+            "corpList": event["corpList"],
+            "readyToBlitz": event["readyToBlitz"]
+        })
+        print(f"{event['sender_channel_name']}\t-\tSending DELEGATE")
+        
+    @database_sync_to_async
+    def delegate_db_handle(self, payload):
+        # Find current game, toss update if doesn't exist for some reason
+        game = Game.objects.all().filter(id=self.game_id)[0]
+        if not game:
+            print("DB update failed, game not found")
+            return
+        
+        friendly = 'w' if game.whitemove else 'b'
+        enemy = 'b' if game.whitemove else 'w'
+        
+        if payload["whiteMove"] == game.whitemove and game.corplist[friendly]['kingCorp']["command_authority_remaining"] > 0 and len(game.corplist[friendly][payload["targetCorp"]]["under_command"]) < 6:
+            local_delegated_piece = json.loads(payload["delegatedPiece"])
+            local_delegated_piece["corp"] = payload["targetCorp"]
+            for corp in game.corplist[friendly]:
+                if corp == 'kingCorp':
+                    game.corplist[friendly][corp]["command_authority_remaining"] = game.corplist[friendly][corp]["command_authority_remaining"] - 1
+                    game.corplist[friendly][corp]["under_command"].remove(json.loads(payload["delegatedPiece"]))
+                if corp == payload["targetCorp"]:
+                    game.corplist[friendly][payload["targetCorp"]]["under_command"].append(local_delegated_piece)
+        
+        # Check for any remaining actions
+        turnend = True
+        for corp in game.corplist[friendly]:
+            if game.corplist[friendly][corp]["command_authority_remaining"] == 1:
+                turnend = False
+        
+        if turnend:
+            for corp in game.corplist[friendly]:
+                game.corplist[friendly][corp]["command_authority_remaining"] = -999
+            for corp in game.corplist[enemy]:
+                game.corplist[enemy][corp]["command_authority_remaining"] = 1
+            game.whiteMove = not game.whiteMove  # Swaps players.
+            game.readyToBlitz = []
+        
+        print("Saving game details")
+        game.save()
+        print("Successfully saved")
+        
+        return (game.whitemove, game.corplist, game.readytoblitz)
     
     async def pass_turn(self, payload):
         try:
