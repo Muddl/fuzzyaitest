@@ -314,6 +314,7 @@ class Boardstate:
             activeCorp = parsedAction["activePiece"]["corp"]
             targetPos = parsedAction["targetPiece"]["pos"]
             friendly = 'w' if self.whiteMove else 'b'
+            enemy = 'b' if self.whiteMove else 'w'
             
             try:
             # GetValidMoveset
@@ -346,7 +347,9 @@ class Boardstate:
                         
                         if turnend:
                             for corp in self.corpLists[friendly]:
-                                self.corpLists[friendly][corp]["command_authority_remaining"] = 1
+                                self.corpLists[friendly][corp]["command_authority_remaining"] = -999
+                            for corp in self.corpLists[enemy]:
+                                self.corpLists[enemy][corp]["command_authority_remaining"] = 1
                             self.whiteMove = not self.whiteMove  # Swaps players.
                             self.readyToBlitz = []
                             
@@ -447,7 +450,9 @@ class Boardstate:
                             # Process the end of a turn
                             if turnend:
                                 for corp in self.corpLists[friendly]:
-                                    self.corpLists[friendly][corp]["command_authority_remaining"] = 1
+                                    self.corpLists[friendly][corp]["command_authority_remaining"] = -999
+                                for corp in self.corpLists[enemy]:
+                                    self.corpLists[enemy][corp]["command_authority_remaining"] = 1
                                 self.whiteMove = not self.whiteMove  # Swaps players.
                                 self.readyToBlitz = []
                             

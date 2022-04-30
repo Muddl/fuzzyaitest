@@ -2507,12 +2507,12 @@ def get_possible_moveset_per_piece(position, piece, team, board_state, whiteMove
     if team == 'b':
         available_squares = get_black_squares_available(corpList)
         corp_string = get_black_corp(position,corpList)
-        board_state_obj = Boardstate(board_state, False, corpList, readyToBlitz, white_captured, black_captured)
+        board_state_obj = Boardstate(board_state, whiteMove, corpList, readyToBlitz, white_captured, black_captured)
         
     else:
         available_squares = get_white_squares_available(corpList)
         corp_string = get_white_corp(position, corpList)
-        board_state_obj = Boardstate(board_state, True, corpList, readyToBlitz, white_captured, black_captured)
+        board_state_obj = Boardstate(board_state, whiteMove, corpList, readyToBlitz, white_captured, black_captured)
 
 
     #print(available_squares)

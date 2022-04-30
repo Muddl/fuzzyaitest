@@ -9,8 +9,16 @@ var socket = new ReconnectingWebSocket(ws_path);
 console.log("Connected on " + ws_path);
 
 // JQuery Element References
-var $whiteCapturedCon = $('#white-captured-con');
-var $blackCapturedCon = $('#black-captured-con');
+var $playerCapturedCon = $('#player-captured-con');
+var $playerCommandAuth = $('#player-command-auth');
+var $playerLBAuth = $('#playerLBAuth');
+var $playerKAuth = $('#playerKAuth');
+var $playerRBAuth = $('#playerRBAuth');
+var $oppCapturedCon = $('#opp-captured-con');
+var $oppCommandAuth = $('#opp-command-auth');
+var $oppLBAuth = $('#oppLBAuth');
+var $oppKAuth = $('#oppKAuth');
+var $oppRBAuth = $('#oppRBAuth');
 var $move_log = $("#move_log");
 var $die = $("#die");
 var $attacking_piece = $("#attacking-piece");
@@ -32,6 +40,47 @@ var local_black_captured = null;
 var local_ai_action_list = null;
 var local_ai_move_list = null;
 var local_readyToBlitz = null;
+var local_delegation_ready = null;
+
+const updateAuthRemaining = () => {
+    // First iterate through local_corplist and create a sublist of remaining command authorities
+    const sublist_of_auth_remain = [];
+    Object.entries(local_corplist.w).forEach((corpKey) => {
+        sublist_of_auth_remain.push(['w', corpKey[0], corpKey[1].command_authority_remaining]);
+    });
+    Object.entries(local_corplist.b).forEach((corpKey) => {
+        sublist_of_auth_remain.push(['b', corpKey[0], corpKey[1].command_authority_remaining]);
+    });
+    console.log(sublist_of_auth_remain);
+    // Then for each corp p tag, replace any integers or # with the relevant value in local_corplist
+    sublist_of_auth_remain.forEach((auth_remain_array) => {
+        if (auth_remain_array[0] == 'w') {
+            switch (auth_remain_array[1]) {
+                case "kingCorp":
+                    $playerKAuth.text((`King: ${auth_remain_array[2]}`));
+                    break;
+                case "leftBishopCorp":
+                    $playerLBAuth.text((`Left Bishop: ${auth_remain_array[2]}`));
+                    break;
+                case "rightBishopCorp":
+                    $playerRBAuth.text((`Right Bishop: ${auth_remain_array[2]}`));
+                    break;
+            };
+        } else if (auth_remain_array[0] == 'b') {
+            switch (auth_remain_array[1]) {
+                case "kingCorp":
+                    $oppKAuth.text((`King: ${auth_remain_array[2]}`));
+                    break;
+                case "leftBishopCorp":
+                    $oppLBAuth.text((`Left Bishop: ${auth_remain_array[2]}`));
+                    break;
+                case "rightBishopCorp":
+                    $oppRBAuth.text((`Right Bishop: ${auth_remain_array[2]}`));
+                    break;
+            };
+        };
+    });
+};
 
 const findCorpOfPiece = (source, piece) => {
     const Apos = source;
@@ -388,6 +437,7 @@ const successfullAttack = (rollVal, blitz, white_captured, black_captured, new_b
 
     board.position(new_boardstate);
 
+    updateAuthRemaining(local_corplist);
     $move_log.append(moveToBeLogged);
     removeCombatPieces();
 };
@@ -426,6 +476,7 @@ const failedAttack = (rollVal, blitz, new_boardstate, activePiece, targetPiece) 
 
     board.position(new_boardstate);
 
+    updateAuthRemaining(local_corplist);
     $move_log.append(moveToBeLogged);
     removeCombatPieces();
 };
@@ -507,14 +558,16 @@ socket.onmessage = (message) => {
             // Set up the captured pieces visualization
             if (local_black_captured != null) {
                 local_black_captured.forEach((piece) => {
-                    $blackCapturedCon.append($('<img>', {src: `../static/chessboard\\b${piece}.png`, width: "40px", height: "40px"}))
+                    $oppCapturedCon.append($('<img>', {src: `../static/chessboard\\b${piece}.png`, width: "40px", height: "40px"}))
                 });
             }
             if (local_white_captured != null) {
                 local_white_captured.forEach((piece) => {
-                    $whiteCapturedCon.append($('<img>', {src: `../static/chessboard\\w${piece}.png`, width: "40px", height: "40px"}))
+                    $playerCapturedCon.append($('<img>', {src: `../static/chessboard\\w${piece}.png`, width: "40px", height: "40px"}))
                 });
             }
+
+            updateAuthRemaining(local_corplist);
 
             if (!local_whiteMove) {
                 startAITurn();
@@ -529,6 +582,8 @@ socket.onmessage = (message) => {
         local_readyToBlitz = data.readyToBlitz;
         
         board.position(data.new_boardstate);
+
+        updateAuthRemaining(local_corplist);
 
         // Append a new entry to the movelog
         var textElement = document.createElement('p');
@@ -563,6 +618,8 @@ socket.onmessage = (message) => {
         local_corplist = data.corpList;
         local_whiteMove = data.whiteMove;
         local_readyToBlitz = data.readyToBlitz;
+
+        updateAuthRemaining(local_corplist);
 
         if (!local_whiteMove) {
             startAITurn();

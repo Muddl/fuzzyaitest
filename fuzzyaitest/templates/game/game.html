@@ -35,14 +35,23 @@
 
 {% block body %}
     <div id="main-container" class="container">
-        <!-- Opponent Captured Pieces -->
-        <div class = "row">
-            <div class="col" style = " max-height: 700px;">
-                <div id="white-captured-con" class="d-flex flex-row text-white">
-                    <p>AI captured pieces:</p>
-                </div>
+        <!-- Opponent Metadata -->
+        <div class="d-flex flex-row justify-content-between">
+            <!-- Opponent Captured Pieces -->
+            <div id="opp-captured-con" class="d-flex flex-fill flex-row justify-content-start align-items-center text-white">
+                <p class="mb-0">AI captured pieces:</p>
             </div>
+            <!-- Opponent Remaining Command Auth -->
+            <div class="d-flex flex-column flex-fill justify-content-end">
+                <p class="text-white">Authority Remaining:</p>
+                <div id="opp-command-auth" class="d-flex flex-row justify-content-around text-white">
+                    <p id="oppLBAuth">Left Bishop: #</p>
+                    <p id="oppKAuth">King: #</p>
+                    <p id="oppRBAuth">Right Bishop: #</p>
+                </div>
+            </div> 
         </div>
+            
 
         <!-- Center Game Row -->
         <div class="row">
@@ -65,11 +74,19 @@
             </div>
         </div>
         
-        <!-- Player Captured Pieces -->
-        <div class = "row">
-            <div class = "col">
-                <div id="black-captured-con" class="d-flex flex-row text-white">
-                    <p>Player captured pieces:</p>
+        <!-- Player Metadata -->
+        <div class="d-flex flex-row justify-content-between">
+            <!-- Player Captured Pieces -->
+            <div id="player-captured-con" class="d-flex flex-fill flex-row justify-content-start align-items-center text-white">
+                <p class="mb-0">Player captured pieces:</p>
+            </div>
+            <!-- Player Remaining Command Auth -->
+            <div class="d-flex flex-column flex-fill justify-content-end">
+                <p class="text-white">Authority Remaining:</p>
+                <div id="player-command_auth" class="d-flex flex-row justify-content-around text-white">
+                    <p id="playerLBAuth">Left Bishop: #</p>
+                    <p id="playerKAuth">King: #</p>
+                    <p id="playerRBAuth">Right Bishop: #</p>
                 </div>
             </div>
         </div>
