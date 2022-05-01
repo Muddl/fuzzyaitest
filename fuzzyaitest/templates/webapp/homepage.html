@@ -26,16 +26,17 @@
 {% endblock navbar %}
 
 {% block body %}
-<!-- Single Player-->
-<div class="container mt-4" style = "font-family: 'MedievalSharp'; color: white">
+  <!-- AI Games -->
+  <div class="container mt-4" style = "font-family: 'MedievalSharp'; color: white">
     <h2>Single Player Games</h2> <br>
     <div class="container" class="container align-items-stretch" style="display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline;">
       {% for running_game in ai %}
         <div class="card border-primary m-1" style="width: 250px">
           <div class="card-header text-center">
-            <h4 class="my-0 font-weight-normal text-dark">{{running_game.level}}</h4>
+            <h4 class="my-0 font-weight-normal text-dark">Game #{{running_game.id}}</h4>
           </div>
           <div class="card-body text-dark text-center" style = "font-family: 'MedievalSharp';">
+            <h6 class = "card-text">AI Level: {{running_game.level}}</h6>
             <h6 class = "card-text">Created: {{running_game.created_at}}</h6>
             <h6 class = "card-text">Last Played: {{running_game.updated_at}}</h6>
             <!--<h6 class="card-text">Awaiting Player to Join</h6>-->
@@ -44,37 +45,65 @@
         </div>
         
       {% empty %}
-        <p style = "font-family: 'MedievalSharp'; color: white">You have not created any public games!</p> <a class="btn btn-secondary mx-2" href="/create" role="button">Create &raquo;</a>
+        <p style = "font-family: 'MedievalSharp'; color: white">You have not created any AI games!</p> <a class="btn btn-secondary mx-2" href="/create" role="button">Create &raquo;</a>
       {% endfor %}
-      <div class="container">
-        <div class="row d-flex justify-content-center">
-           <a class="btn btn-secondary mx-2" href="/create" role="button">Create</a>
-       </div>
-    </div> 
+    </div>
   </div>
 
-  <!-- Multiplayer games-->
+  <!-- Owned Multiplayer Games-->
   <div class="container mt-4" style = "font-family: 'MedievalSharp';">
-    <h2 style = "color: white">Multiplayer Games</h2> <br>
+    <h2 style = "color: white">My Multiplayer Games</h2> <br>
     <div class="container" class="container align-items-stretch" style="display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline;">
-      {% for room in ongoing %}
+      {% for running_game in my_multi %}
         <div class="card border-primary m-1" style="width: 250px">
-          <div class="card-body" style = "font-family: 'MedievalSharp';">
-            <h6 class="card-text">Against: {{room.opponent.username}}</h6>
-            <h6 class="card-text">You're Playing as {{room.side | title}}</h6>
-            <h6 class="card-text">Awaiting Player to Join</h6>
-            <a type="button" class="btn btn-lg btn-block btn-primary" href="{{ room.link }}">Continue</a>
+          <div class="card-header text-center">
+            <h4 class="my-0 font-weight-normal text-dark">Game #{{running_game.id}}</h4>
+          </div>
+          <div class="card-body text-dark text-center" style = "font-family: 'MedievalSharp';">
+            <h6 class = "card-text">White Side Player: {{running_game.white}}</h6>
+            <h6 class = "card-text">Black Side Player: {{running_game.black}}</h6>
+            <h6 class = "card-text">Created: {{running_game.created_at}}</h6>
+            <h6 class = "card-text">Last Played: {{running_game.updated_at}}</h6>
+            <!--<h6 class="card-text">Awaiting Player to Join</h6>-->
+            <a type="button" class="btn btn-lg btn-block btn-primary" href={{running_game.link}}>Join Game</a>
           </div>
         </div>
+        
       {% empty %}
-        <p style = "font-family: 'MedievalSharp'; color: white">You do not have any Ongoing Games! </p> 
-       
-        <!-- This button links to creating a single player game, re-implement w/ multiplayer -->
-        <a class="btn btn-secondary mx-2" href="/create" role="button">Create &raquo;</a>
-
+        <p style = "font-family: 'MedievalSharp'; color: white">You have not created any live mutliplayer games!</p> <a class="btn btn-secondary mx-2" href="/create" role="button">Create &raquo;</a>
       {% endfor %}
     </div> 
   </div>
 
+  <!-- Public Multiplayer Games-->
+  <div class="container mt-4" style = "font-family: 'MedievalSharp';">
+    <h2 style = "color: white">Open Multiplayer Games</h2> <br>
+    <div class="container" class="container align-items-stretch" style="display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline;">
+      {% for running_game in open_multi %}
+        <div class="card border-primary m-1" style="width: 250px">
+          <div class="card-header text-center">
+            <h4 class="my-0 font-weight-normal text-dark">Game #{{running_game.id}}</h4>
+          </div>
+          <div class="card-body text-dark text-center" style = "font-family: 'MedievalSharp';">
+            <h6 class = "card-text">White Side Player: {{running_game.white}}</h6>
+            <h6 class = "card-text">Black Side Player: {{running_game.black | default:'Open to Join'}}</h6>
+            <h6 class = "card-text">Created: {{running_game.created_at}}</h6>
+            <h6 class = "card-text">Last Played: {{running_game.updated_at}}</h6>
+            <!--<h6 class="card-text">Awaiting Player to Join</h6>-->
+            <a type="button" class="btn btn-lg btn-block btn-primary" href={{running_game.link}}>Join Game</a>
+          </div>
+        </div>
+        
+      {% empty %}
+        <p style = "font-family: 'MedievalSharp'; color: white">No live games available. Create one now!</p> <a class="btn btn-secondary mx-2" href="/create" role="button">Create &raquo;</a>
+      {% endfor %}
+    </div> 
+  </div>
+
+  <div class="container">
+    <div class="row d-flex justify-content-center">
+      <a class="btn btn-secondary mx-2" href="/create" role="button">Create</a>
+    </div>
+  </div>
    
 {% endblock body %}

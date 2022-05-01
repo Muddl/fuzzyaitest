@@ -9,10 +9,20 @@ from .models import Game
 @login_required
 def game(request, game_id):
     game = get_object_or_404(Game,pk=game_id)
+    player_username = request.user
+    opp_username = game.opponent if game.opponent != None else "AI"
     if game.status == 3:
         messages.add_message(request, messages.ERROR, "This game has already been completed! Start another")
         return HttpResponseRedirect(reverse("homepage"))
     if request.user != game.owner:
-        messages.add_message(request, messages.ERROR, "This game already has enough participants. Try joining another")
-        return HttpResponseRedirect(reverse("homepage"))
-    return render(request, "game/game.html", {"game_id":game_id})
+        opp_username = game.owner
+        if game.status == 1 and game.opponent == None:
+            game.opponent = request.user
+            game.status = 2
+            game.save()
+            opp_username = game.owner
+            messages.add_message(request, messages.SUCCESS, "You have joined this game successfully!")
+        elif game.status == 2 and (game.opponent == None or game.opponent != request.user):
+            messages.add_message(request, messages.ERROR, "This game already has enough participants. Try joining another")
+            return HttpResponseRedirect(reverse("homepage"))
+    return render(request, "game/game.html", {"game_id": game_id, "player_username": player_username, "opp_username": opp_username})

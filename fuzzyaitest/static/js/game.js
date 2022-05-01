@@ -9,29 +9,31 @@ var socket = new ReconnectingWebSocket(ws_path);
 console.log("Connected on " + ws_path);
 
 // JQuery Element References
+// Orientation Dependant
 var $playerCapturedCon = $('#player-captured-con');
-var $playerCommandAuth = $('#player-command-auth');
 var $playerLBAuth = $('#playerLBAuth');
 var $playerKAuth = $('#playerKAuth');
 var $playerRBAuth = $('#playerRBAuth');
 var $oppCapturedCon = $('#opp-captured-con');
-var $oppCommandAuth = $('#opp-command-auth');
 var $oppLBAuth = $('#oppLBAuth');
 var $oppKAuth = $('#oppKAuth');
 var $oppRBAuth = $('#oppRBAuth');
+// Non-Orientation Dependant
 var $move_log = $("#move_log");
 var $die = $("#die");
 var $attacking_piece = $("#attacking-piece");
 var $defending_piece = $("#defending-piece");
-var $opp_pieces = $("#white-captured-con");
-var $own_pieces = $("#black-captured-con");
 var $attack_result = $("#attack-result");
+var $gameModalTitle = $('#game-modal-title');
+var $gameModalBody = $('#game-modal-body');
 var $resModalTitle = $('#res-modal-title');
 var $resModalBody = $('#res-modal-body');
 var $kingDelegateMenuContents = $("#kingDelegateMenuContents");
 var $targetCorpMenuContents = $("#targetCorpMenuContents");
 
 // Local Gamestate Var Holders
+var local_orientation = null;
+var local_opp_online = null;
 var local_boardstate = null;
 var local_isAIGame = null;
 var local_level = null;
@@ -43,6 +45,7 @@ var local_ai_action_list = null;
 var local_ai_move_list = null;
 var local_readyToBlitz = null;
 var local_delegation_ready = null;
+var board = Chessboard('my_board');
 
 const updateAuthRemaining = () => {
     // First iterate through local_corplist and create a sublist of remaining command authorities
@@ -300,6 +303,16 @@ const attackOrMove = (oldPos, newPos) => {
 
 // This triggers on a piece pickup & sends a highlight request to the backend
 const onDragStart = (source, piece) => {
+    if ((local_orientation === 'white' && piece.search(/^b/) !== -1) ||
+        (local_orientation === 'black' && piece.search(/^w/) !== -1)) {
+        return false
+    }
+    // only pick up pieces for the side to move
+    if ((local_whiteMove === true && piece.search(/^b/) !== -1) ||
+        (local_whiteMove === false && piece.search(/^w/) !== -1)) {
+        return false
+    }
+
     const Apos = source;
     const Acolor = piece.substring(0,1);
     const Arank = piece.substring(1,2);
@@ -393,37 +406,23 @@ const onSnapEnd = () => {
     board.position(local_boardstate, false);
 };
 
-// Configure for AI Game funcs
-var config = {
-    draggable: true,
-    dropOffBoard: 'snapback',
-    position: 'start',
-    onDrop: onDrop,
-    onDragStart: onDragStart,
-    onSnapEnd: onSnapEnd,
-    pieceTheme: '/static/chessboard/{piece}.png',
-};
-
-// Render chessboard with config
-var board = Chessboard('my_board', config);
-
 const renderPieceListAnim = (white_captured, black_captured) => {
     let eliminatedPiece = $defending_piece.attr("src");
-    let colorOfPiece = eliminatedPiece.charAt(eliminatedPiece.length - 6);
-    let PlayerCapturedPieces = black_captured;
-    let OppCapturedPieces = white_captured;
+    let colorOfPiece = (eliminatedPiece.charAt(eliminatedPiece.length - 6) === 'b' ? 'black' : 'white');
+    let PlayerCapturedPieces = (colorOfPiece === local_orientation ? white_captured : black_captured);
+    let OppCapturedPieces = (colorOfPiece === local_orientation ? black_captured : white_captured);
 
-    if (colorOfPiece == 'b') {
-        PlayerCapturedPieces.push(eliminatedPiece);
-        for (let count = PlayerCapturedPieces.length; count < PlayerCapturedPieces.length + 1; count++) {
-            var imageElement = $('<img />', { src: PlayerCapturedPieces[count-1], }).css('width', '40px').css('height', '40px');
-            $own_pieces.append(imageElement);
-        };
-    } else {
+    if (colorOfPiece === local_orientation) {
         OppCapturedPieces.push(eliminatedPiece)
         for (let count = OppCapturedPieces.length; count < OppCapturedPieces.length + 1; count++) {
             var imageElement = $('<img />', { src: OppCapturedPieces[count-1], }).css('width', '40px').css('height', '40px');
-            $opp_pieces.append(imageElement);
+            $oppCapturedCon.append(imageElement);
+        };
+    } else {
+        PlayerCapturedPieces.push(eliminatedPiece);
+        for (let count = PlayerCapturedPieces.length; count < PlayerCapturedPieces.length + 1; count++) {
+            var imageElement = $('<img />', { src: PlayerCapturedPieces[count-1], }).css('width', '40px').css('height', '40px');
+            $playerCapturedCon.append(imageElement);
         };
     };
 };
@@ -555,9 +554,24 @@ const resolveAttack = (data) => {
         setTimeout(failedAttack(data.roll_val, data.isBlitz, data.new_boardstate, data.activePiece, data.targetPiece), 3000);
     };
 
-    // if ("kingDead" in data) {
+    if ("kingDead" in data) {
+        var status = 'Game over, ' + (local_whiteMove ? "black" : "white") + ' is in checkmate.';
+        if (!local_whiteMove) {
+            socket.send(JSON.stringify({"actionType": "GAME_OVER","result": "Black wins"}));
+        } else {
+            socket.send(JSON.stringify({"actionType": "GAME_OVER","result": "White wins"}));
+        };
+        $gameModalTitle.html("Game Over")
+        $gameModalBody.html(status)
+        $('#gameModal').modal({
+            keyboard: false,
+            backdrop: 'static'
+        });
+    };
 
-    // };
+    if (!local_whiteMove && local_isAIGame) {
+        startAITurn();
+    }
 };
 
 const startAITurn = () => {
@@ -579,8 +593,8 @@ socket.onopen = () => {
 
 // Fires whenever socket connection is dropped unexpectedly
 socket.onclose = () => {
-    $modalTitle.html("Connection closed");
-    $modalBody.html("Connection closed unexpectedly please wait while we try to reconnect...");
+    $gameModalTitle.html("Connection closed");
+    $gameModalBody.html("Connection closed unexpectedly please wait while we try to reconnect...");
     $('#gameModal').modal({
       keyboard: false,
       backdrop: 'static'
@@ -605,6 +619,19 @@ socket.onmessage = (message) => {
             local_white_captured = data.white_captured;
             local_black_captured = data.black_captured;
             local_readyToBlitz = data.readyToBlitz;
+            
+            var config = {
+                draggable: true,
+                dropOffBoard: 'snapback',
+                position: 'start',
+                onDrop: onDrop,
+                onDragStart: onDragStart,
+                onSnapEnd: onSnapEnd,
+                pieceTheme: '/static/chessboard/{piece}.png',
+            };
+
+            // Render chessboard with config
+            board = Chessboard('my_board', config);
 
             board.position(local_boardstate);
 
@@ -625,7 +652,86 @@ socket.onmessage = (message) => {
             if (!local_whiteMove) {
                 startAITurn();
             }
+        } else { // Multiplayer game
+            // Set local var values
+            local_boardstate = data.boardstate;
+            local_isAIGame = data.isAIGame;
+            local_level = data.level;
+            local_whiteMove = data.whiteMove;
+            local_corplist = data.corplist;
+            local_white_captured = data.white_captured;
+            local_black_captured = data.black_captured;
+            local_readyToBlitz = data.readyToBlitz;
+            local_orientation = data.side;
+            local_opp_online = data.local_opp_online;
+
+            var config = {
+                draggable: true,
+                dropOffBoard: 'snapback',
+                position: 'start',
+                orientation: local_orientation,
+                onDrop: onDrop,
+                onDragStart: onDragStart,
+                onSnapEnd: onSnapEnd,
+                pieceTheme: '/static/chessboard/{piece}.png',
+            };
+
+            // Render chessboard with config
+            board = Chessboard('my_board', config);
+
+            board.position(local_boardstate);
+
+            // Set up the captured pieces visualization
+            if (local_orientation === 'black') {
+                if (local_black_captured != null) {
+                    local_black_captured.forEach((piece) => {
+                        $oppCapturedCon.append($('<img>', {src: `../static/chessboard\\b${piece}.png`, width: "40px", height: "40px"}))
+                    });
+                }
+                if (local_white_captured != null) {
+                    local_white_captured.forEach((piece) => {
+                        $playerCapturedCon.append($('<img>', {src: `../static/chessboard\\w${piece}.png`, width: "40px", height: "40px"}))
+                    });
+                };
+            };
+            if (local_orientation === 'white') {
+                if (local_black_captured != null) {
+                    local_black_captured.forEach((piece) => {
+                        $playerCapturedCon.append($('<img>', {src: `../static/chessboard\\b${piece}.png`, width: "40px", height: "40px"}))
+                    });
+                }
+                if (local_white_captured != null) {
+                    local_white_captured.forEach((piece) => {
+                        $oppCapturedCon.append($('<img>', {src: `../static/chessboard\\w${piece}.png`, width: "40px", height: "40px"}))
+                    });
+                };
+            };
+
+            updateAuthRemaining(local_corplist);
+
+            if(local_opp_online != true) {
+                $gameModalTitle.html("Please Wait...")
+                $gameModalBody.html("Please wait for your opponent to connect to this game")
+                $('#gameModal').modal({
+                    keyboard: false,
+                    backdrop: 'static'
+                });
+            }
         }
+    }
+    // On OPPONENT-ONLINE actionType
+    else if(data.actionType=="OPPONENT-ONLINE"){
+        $('#gameModal').modal('hide');
+        $('#gameModal').data('bs.modal',null);
+    }
+    // On OPPONENT-OFFLINE actionType
+    else if(data.actionType=="OPPONENT-OFFLINE"){
+        $gameModalTitle.html("Please Wait...")
+        $gameModalBody.html("Your opponent suddenly disconnected. Please wait for your opponent to connect to this game")
+        $('#gameModal').modal({
+            keyboard: false,
+            backdrop: 'static'
+        });
     }
     // On MOVEMENT actionType
     else if(data.actionType=="MOVEMENT") {
@@ -644,7 +750,7 @@ socket.onmessage = (message) => {
         $move_log.append(textElement);
         $move_log.css("display",'inline');
 
-        if (!local_whiteMove) {
+        if (!local_whiteMove && local_isAIGame) {
             startAITurn();
         }
     }
@@ -656,10 +762,6 @@ socket.onmessage = (message) => {
         local_readyToBlitz = data.readyToBlitz;
         
         resolveAttack(data);
-
-        if (!local_whiteMove) {
-            startAITurn();
-        }
     }
     // On HIGHLIGHT actionType
     else if(data.actionType=="HIGHLIGHT") {
@@ -667,6 +769,7 @@ socket.onmessage = (message) => {
         data.setup.forEach(pos => greenSquare(pos));
         data.movement.forEach(pos => greySquare(pos));
     }
+    // On DELEGATE actionType
     else if(data.actionType=="DELEGATE") {
         local_corplist = data.corpList;
         local_whiteMove = data.whiteMove;
@@ -674,10 +777,11 @@ socket.onmessage = (message) => {
 
         updateAuthRemaining(local_corplist);
 
-        if (!local_whiteMove) {
+        if (!local_whiteMove && local_isAIGame) {
             startAITurn();
         }
     }
+    // On PASS actionType
     else if(data.actionType=="PASS") {
         local_corplist = data.corpList;
         local_whiteMove = data.whiteMove;
@@ -685,7 +789,7 @@ socket.onmessage = (message) => {
 
         updateAuthRemaining(local_corplist);
 
-        if (!local_whiteMove) {
+        if (!local_whiteMove && local_isAIGame) {
             startAITurn();
         }
     }
@@ -713,10 +817,28 @@ socket.onmessage = (message) => {
             } else if (action.actionType == "ATTACK_ATTEMPT") {
                 resolveAttack(action);
             }
-        });
-        board.position(data.new_boardstate, false);
 
-        updateAuthRemaining(local_corplist);
+            updateAuthRemaining(local_corplist);
+        });
+    }
+    // On GAME_OVER actionType
+    else if(data.actionType=="GAME_OVER") {
+        var status = 'Game over, ' + (local_whiteMove ? "black" : "white") + ' successfully captured the opposing king.';
+        $gameModalTitle.html("Game Over")
+        $gameModalBody.html(status)
+        $('#gameModal').modal({
+            keyboard: false,
+            backdrop: 'static'
+        });
+    }
+    // On OPPONENT_RESIGNED
+    else if(data.actionType=="OPPONENT_RESIGNED") {
+        $gameModalTitle.html("Game over")
+        $gameModalBody.html("Your opponent has resigned from the game. You win!")
+        $('#gameModal').modal({
+            keyboard: false,
+            backdrop: 'static'
+        });
     }
 };
 
@@ -731,52 +853,58 @@ $(document).on('click','#delegate', () => {
     const kingDelegatables = [];
     $kingDelegateMenuContents.empty();
     $kingDelegateMenuContents.append($('<h5>').text('Which Piece'));
-    if (local_whiteMove) {
-        Object.entries(local_corplist.w).forEach((corpKey) => {
-            if (corpKey[0] == 'kingCorp') {
-                corpKey[1].under_command.forEach((piece) => {
-                    kingDelegatables.push(piece);
-                });
-            };
+    if ((local_whiteMove) === (local_orientation === 'white')) {
+        if (local_whiteMove) {
+            Object.entries(local_corplist.w).forEach((corpKey) => {
+                if (corpKey[0] == 'kingCorp') {
+                    corpKey[1].under_command.forEach((piece) => {
+                        kingDelegatables.push(piece);
+                    });
+                };
+            });
+        } else {
+            Object.entries(local_corplist.b).forEach((corpKey) => {
+                if (corpKey[0] == 'kingCorp') {
+                    corpKey[1].under_command.forEach((piece) => {
+                        kingDelegatables.push(piece);
+                    });
+                };
+            });
+        };
+
+        kingDelegatables.forEach((piece) => {
+            const $interimCheckGroup = $('<div>', {class: "form-check"});
+            $interimCheckGroup.append($('<input>', {class: "form-check-input", type:"radio", name:`kingDelegateablesRadio`, id:`${piece.color}${piece.rank}-radio`, value:JSON.stringify(piece)}));
+            $interimCheckGroup.append($('<label>', {class: "form-check-label", for:`${piece.color}${piece.rank}-radio`}).text(`${piece.color}${piece.rank} at ${piece.pos}`));
+            $kingDelegateMenuContents.append($interimCheckGroup);
         });
-    } else {
-        Object.entries(local_corplist.b).forEach((corpKey) => {
-            if (corpKey[0] == 'kingCorp') {
-                corpKey[1].under_command.forEach((piece) => {
-                    kingDelegatables.push(piece);
-                });
-            };
-        });
-    };
-    kingDelegatables.forEach((piece) => {
-        const $interimCheckGroup = $('<div>', {class: "form-check"});
-        $interimCheckGroup.append($('<input>', {class: "form-check-input", type:"radio", name:`kingDelegateablesRadio`, id:`${piece.color}${piece.rank}-radio`, value:JSON.stringify(piece)}));
-        $interimCheckGroup.append($('<label>', {class: "form-check-label", for:`${piece.color}${piece.rank}-radio`}).text(`${piece.color}${piece.rank} at ${piece.pos}`));
-        $kingDelegateMenuContents.append($interimCheckGroup);
-    });
+    }
     
     const targetCorps = [];
     $targetCorpMenuContents.empty();
     $targetCorpMenuContents.append($('<h5>').text('Which Destination Corp'));
-    if (local_whiteMove) {
-        Object.entries(local_corplist.w).forEach((corpKey) => {
-            if (corpKey[0] != 'kingCorp' && corpKey[1].under_command.length <= 6) {
-                targetCorps.push(corpKey[0]);
-            };
+    if ((!local_whiteMove) === (local_orientation === 'black')) {
+        if (local_whiteMove) {
+            Object.entries(local_corplist.w).forEach((corpKey) => {
+                if (corpKey[0] != 'kingCorp' && corpKey[1].under_command.length <= 6) {
+                    targetCorps.push(corpKey[0]);
+                };
+            });
+        } else {
+            Object.entries(local_corplist.b).forEach((corpKey) => {
+                if (corpKey[0] != 'kingCorp' && corpKey[1].under_command.length <= 6) {
+                    targetCorps.push(corpKey[0]);
+                };
+            });
+        };
+
+        targetCorps.forEach((corp) => {
+            const $interimCheckGroup = $('<div>', {class: "form-check"});
+            $interimCheckGroup.append($('<input>', {class: "form-check-input", type:"radio", name:`targetCorpRadio`, id:`${corp}-radio`, value:corp}));
+            $interimCheckGroup.append($('<label>', {class: "form-check-label", for:`${corp}-radio`}).text(corp));
+            $targetCorpMenuContents.append($interimCheckGroup);
         });
-    } else {
-        Object.entries(local_corplist.b).forEach((corpKey) => {
-            if (corpKey[0] != 'kingCorp' && corpKey[1].under_command.length <= 6) {
-                targetCorps.push(corpKey[0]);
-            };
-        });
-    };
-    targetCorps.forEach((corp) => {
-        const $interimCheckGroup = $('<div>', {class: "form-check"});
-        $interimCheckGroup.append($('<input>', {class: "form-check-input", type:"radio", name:`targetCorpRadio`, id:`${corp}-radio`, value:corp}));
-        $interimCheckGroup.append($('<label>', {class: "form-check-label", for:`${corp}-radio`}).text(corp));
-        $targetCorpMenuContents.append($interimCheckGroup);
-    });
+    } 
 });
 
 // 

@@ -39,7 +39,7 @@
         <div class="d-flex flex-row justify-content-between">
             <!-- Opponent Captured Pieces -->
             <div class="d-flex flex-row justify-content-start align-items-center text-white" style="max-width: 50%">
-                <p class="mb-0">AI captured pieces:</p>
+                <p class="mb-0">{{opp_username}}'s captured pieces:</p>
                 <div id="opp-captured-con" class="d-flex flex-wrap text-white"></div>
             </div>
             <!-- Opponent Remaining Command Auth -->
@@ -78,7 +78,7 @@
         <div class="d-flex flex-row justify-content-between">
             <!-- Player Captured Pieces -->
             <div class="d-flex flex-row justify-content-start align-items-center text-white" style="max-width: 50%">
-                <p class="mb-0">Player captured pieces:</p>
+                <p class="mb-0">{{player_username}}'s captured pieces:</p>
                 <div id="player-captured-con" class="d-flex flex-wrap text-white"></div>
             </div>
             <!-- Player Remaining Command Auth -->
@@ -97,10 +97,10 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h4 class="modal-title" id="modal-title">Please wait...</h4>
+                        <h4 class="modal-title" id="game-modal-title">Please wait...</h4>
                     </div>
                     <div class="modal-body">
-                        <p id="modal-body">Wait for your opponent to connect to the game</p>
+                        <p id="game-modal-body">Wait for your opponent to connect to the game</p>
                     </div>
                     <div class="modal-footer">
                         <a href="/" class="btn btn-danger">Return to Lobby</a>

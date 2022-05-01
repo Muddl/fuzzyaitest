@@ -31,6 +31,12 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         await self.accept()
         # Call join_room(side) to handle establishment of group connection
         await self.join_room(game_metadata)
+        if game_metadata[0] == False:
+            await self.opp_online()
+    
+    async def disconnect(self, code):
+        await self.disconn()
+        await self.opp_offline()
         
     # Handles join room functions from connect()
     async def join_room(self, data):
@@ -54,6 +60,22 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 "readyToBlitz": data[7]
             })
             print(f"Sending JOIN for AI Game")
+        else:
+            # Send join command to the created (or connected) group
+            await self.send_json({
+                "actionType": "JOIN",
+                "isAIGame": data[0],
+                "boardstate": data[1],
+                "level": data[2],
+                "whiteMove": data[3],
+                "corplist": data[4],
+                "white_captured": data[5],
+                "black_captured": data[6],
+                "readyToBlitz": data[7],
+                "side": data[8],
+                "local_opp_online": data[9]
+            })
+            print(f"Sending JOIN for Multiplayer Game for {data[8]} side")
     
     @database_sync_to_async
     def verify(self, game_id):
@@ -62,19 +84,37 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         if not game:
             return False
         
+        user = self.scope["user"]
+        side = 'white'
+        local_opp_online = False
+        
         # If opponent doesn't exist, it's an AI game
-        if game.opponent == None:
-            user = self.scope["user"]
+        if game.opponent == user:
+            game.opponent_online = True
+            side = 'black'
+            if game.owner_online == True:
+                local_opp_online = True
+            print(f"Game_Id:{game_id}\t-\tSetting Opponent_Online In DB")
+            game.save()
+            return [False, game.boardstate, game.level, game.whitemove, game.corplist, game.white_captured, game.black_captured, game.readytoblitz, side, local_opp_online]
             
+        elif game.opponent == None:
             if game.owner == user:
                 game.owner_online = True
                 print(f"Game_Id:{game_id}\t-\tSetting Owner_Online In DB")
-            else:
-                return False
+                game.save()
+                return [True, game.boardstate, game.level, game.whitemove, game.corplist, game.white_captured, game.black_captured, game.readytoblitz, side, local_opp_online]
         
+        elif game.owner == user:
+            game.owner_online = True
+            if game.opponent_online == True:
+                local_opp_online = True
+            print(f"Game_Id:{game_id}\t-\tSetting Owner_Online In DB")
             game.save()
-            
-            return [True, game.boardstate, game.level, game.whitemove, game.corplist, game.white_captured, game.black_captured, game.readytoblitz]
+            return [False, game.boardstate, game.level, game.whitemove, game.corplist, game.white_captured, game.black_captured, game.readytoblitz, side, local_opp_online]
+        
+        else:
+            return False
     
     async def receive_json(self, content):
         # Grab actionType & isAIGame
@@ -95,11 +135,46 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 await self.pass_turn(content)
             elif actionType == "AI_TURN_REQ":
                 await self.ai_turn_req(content)
+            elif actionType == "GAME_OVER":
+                await self.game_over_msg(content)
+                await self.game_over(content["result"])
             elif actionType == "RESIGN":
                 await self.resign()
                 await self.game_over(content["result"])
         except:
             pass
+    
+    async def opp_offline(self):
+        await self.channel_layer.group_send(
+            str(self.game_id),
+            {
+                "type": "offline.opp",
+                'sender_channel_name': self.channel_name
+            }
+        )
+    
+    async def offline_opp(self,event):
+        if self.channel_name != event['sender_channel_name']:
+            await self.send_json({
+                "actionType":"OPPONENT-OFFLINE",
+            })
+            print(f"{self.channel_name}\t-\tSending OPPONENT-OFFLINE")
+    
+    async def opp_online(self):
+        await self.channel_layer.group_send(
+            str(self.game_id),
+            {
+                "type": "online.opp",
+                'sender_channel_name': self.channel_name
+            }
+        )
+    
+    async def online_opp(self,event):
+        if self.channel_name != event['sender_channel_name']:
+            await self.send_json({
+                "actionType":"OPPONENT-ONLINE",
+            })
+            print(f"{self.channel_name}\t-\tSending OPPONENT-ONLINE")
     
      # Helper function called when a new-move command is recieved, broadcasts move.new event to group, handled in move_new
     async def new_move(self, payload):
@@ -641,12 +716,11 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         
         # End game
         game.status = 3
-        if (game.opponent == None): # AI Game
-            if kingDead == 'w':
-                game.winner = 'White wins'
-            if kingDead == 'b':
-                game.winner = 'Black wins'
-        
+        if kingDead == 'w':
+            game.winner = 'White wins'
+        if kingDead == 'b':
+            game.winner = 'Black wins'
+
         # Persist transaction
         print("Saving game details")
         game.save()
@@ -664,9 +738,29 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         print("Saving game details")
         game.save()
         print("Successfully saved")
+        
+    async def game_over_msg(self, event):
+        if self.channel_name != event['sender_channel_name']:
+            await self.send_json({
+                "actionType": event["actionType"],
+                "result": event["result"]
+            })
 
     # Helper function to grab the current boardstate from the DB
     @database_sync_to_async
     def get_boardstate(self):
         game = Game.objects.all().filter(id=self.game_id)[0]
         return game.boardstate, game.whitemove, game.corplist, game.readytoblitz, game.white_captured, game.black_captured
+    
+    @database_sync_to_async
+    def disconn(self):
+        user = self.scope["user"]
+        game = Game.objects.all().filter(id=self.game_id)[0]
+        if game.opponent == user:
+            game.opponent_online = False
+            print(f"{self.channel_name}\t-\tSetting OPPONENT-OFFLINE")
+        elif game.owner == user:
+            game.owner_online = False
+            print(f"{self.channel_name}\t-\tSending OWNER-OFFLINE")
+        game.save()
+        print(f"Successfully Disconnected")
