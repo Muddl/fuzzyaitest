@@ -13,7 +13,13 @@
 {% block navbar %}
     <ul class="navbar-nav mr-auto">
         <li class="nav-item">
-            <a class="nav-link" href="/">Homepage</a>
+            <a class = "nav-link active" href = "/">Homepage</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="/rules">Rules</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="/completed">Completed</a>
         </li>
     </ul>
 
@@ -29,7 +35,27 @@
 
 {% block body %}
     <div id="main-container" class="container">
+        <!-- Opponent Metadata -->
+        <div class="d-flex flex-row justify-content-between">
+            <!-- Opponent Captured Pieces -->
+            <div class="d-flex flex-row justify-content-start align-items-center text-white" style="max-width: 50%">
+                <p class="mb-0">{{opp_username}}'s captured pieces:</p>
+                <div id="opp-captured-con" class="d-flex flex-wrap text-white"></div>
+            </div>
+            <!-- Opponent Remaining Command Auth -->
+            <div class="d-flex flex-column flex-fill justify-content-end" style="max-width: 50%">
+                <p class="text-white">Authority Remaining:</p>
+                <div id="opp-command-auth" class="d-flex flex-row justify-content-around text-white">
+                    <p id="oppLBAuth">Left Bishop: #</p>
+                    <p id="oppKAuth">King: #</p>
+                    <p id="oppRBAuth">Right Bishop: #</p>
+                </div>
+            </div> 
+        </div> 
+
+        <!-- Center Game Row -->
         <div class="row">
+            <!-- Roll Indicator -->
             <div class="col-sm border border-dark bg-white">
                 <p class="text-center fs-4">Attacking</p>
                 <img id="attacking-piece" src="{% static '/Chessboard/wB.png' %}" alt="attacking piece" style="width: 125px; visibility: hidden;" class="displayed rounded mx-auto d-block">
@@ -39,23 +65,140 @@
                 <p class="text-center fs-4">Defending</p>
             </div>
     
-            <!-- Captured Pieces by each side -->
-            <div class="col">
-                <div id="white-captured-con" class="d-flex-inline flex-row">
-                    <p>AI captured pieces:</p>
-                </div>
-                
-                <div id="my_board" style="width: 650px"></div>
-            
-                <div id="black-captured-con" class="d-flex-inline flex-row">
-                    <p>Player captured pieces:</p>
-                </div>
-            </div>
-    
-            <!-- Move Log Column -->
-            <div id="move_log" class="col-sm border border-dark bg-white">
+            <!-- Game Board -->
+            <div id="my_board" style="width: 650px"></div>
+
+            <!-- Move Log -->
+            <div id="move_log" class="col-sm border border-dark bg-white overflow-auto" style = "max-height: 700px;">
                 <p class="text-center fs-4">Move Log</p>
             </div>
         </div>
+        
+        <!-- Player Metadata -->
+        <div class="d-flex flex-row justify-content-between">
+            <!-- Player Captured Pieces -->
+            <div class="d-flex flex-row justify-content-start align-items-center text-white" style="max-width: 50%">
+                <p class="mb-0">{{player_username}}'s captured pieces:</p>
+                <div id="player-captured-con" class="d-flex flex-wrap text-white"></div>
+            </div>
+            <!-- Player Remaining Command Auth -->
+            <div class="d-flex flex-column flex-fill justify-content-end" style="max-width: 50%">
+                <p class="text-white">Authority Remaining:</p>
+                <div id="player-command_auth" class="d-flex flex-row justify-content-around text-white">
+                    <p id="playerLBAuth">Left Bishop: #</p>
+                    <p id="playerKAuth">King: #</p>
+                    <p id="playerRBAuth">Right Bishop: #</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Modal -->
+        <div class="modal fade" id="gameModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="game-modal-title">Please wait...</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p id="game-modal-body">Wait for your opponent to connect to the game</p>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="/" class="btn btn-danger">Return to Lobby</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Rule Modal -->
+        <div class="modal fade" id="ruleModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header text-center">
+                        <h4 class="modal-title" id="ruleModalTitle">Rules</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            <img src="{% static 'rules/0001.jpg' %}" class = "img-fluid justify-content-center padding-top"/>
+                            <img src="{% static 'rules/0002.jpg' %}" class = "img-fluid justify-content-center padding-top"/>
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Delegate Modal -->
+        <div class="modal fade" id="delegateModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="delegateModalTitle">King Delegation Action</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    </div>
+                    <form>
+                        <div class="modal-body">
+                            <!-- First dropdown selects the under_command of kingCorp to delegate (once per turn) -->
+                            <div class="form-group" id="kingDelegateMenuContents">
+                            </div>
+                            <!-- Second the target delegation corp (only bishops, limit 6 under_command) -->
+                            <div class="form-group" id="targetCorpMenuContents">
+                            </div>
+                        </div>
+                    </form>
+                    <div class="modal-footer">
+                        <!-- Add delegation confirmation button -->
+                        <button class="btn btn-danger" id="confirmDelegate">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pass Modal -->
+        <div class="modal fade" id="passModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="passModalTitle">Confirm Turn Pass</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p id="pass-modal-body">Are you sure you want to pass the rest of this turn?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" id="yesPass">Yes</button>
+                        <button class="btn btn-success" id="noPass">No</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resign Modal -->
+        <div class="modal fade" id="resignModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="resignModalTitle">Confirm Resign</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p id="res-modal-body">Are you sure you want to resign this game?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" id="yesRes">Yes</button>
+                        <button class="btn btn-success" id="noRes">No</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Button Row -->
+        <div class ="row justify-content-around">
+            <a data-toggle="modal" data-target="#ruleModal"><button type="button" class = "btn btn-primary btn-sm">Rules</button></a>
+            <a data-toggle="modal" data-target="#delegateModal"><button id="delegate" type="button" class="btn btn-success btn-sm">Delegate</button></a>
+            <a data-toggle="modal" data-target="#passModal"><button id="pass" type="button" class="btn btn-warning btn-sm">Pass</button></a>
+            <a data-toggle="modal" data-target="#resignModal"><button id="resign" type="button" class="btn btn-danger btn-sm">Resign</button></a>
+        </div>
+
     </div>
 {% endblock body %}

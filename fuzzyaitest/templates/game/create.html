@@ -3,13 +3,19 @@
 {% block title %}Create A Game{% endblock title %}
 
 {% block navbar %}
-    <ul class="navbar-nav mr-auto">
+    <ul class="navbar-nav mr-auto" style = "font-family: 'MedievalSharp'">
         <li class="nav-item">
-            <a class="nav-link" href="/">Homepage</a>
+            <a class="nav-link active" href="/">Homepage</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="/rules">Rules</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="/completed">Completed</a>
         </li>
     </ul>
 
-    <ul class="navbar-nav ml-auto">
+    <ul class="navbar-nav ml-auto" style = "font-family: 'MedievalSharp'">
         <li class="nav-item">
             <a class="nav-link" href="/accounts/logout">Logout</a>
         </li>
@@ -21,11 +27,28 @@
 
 {% block body %}
     <div class="container mt-5 offset-2 col-8">
-        <form class="" action="{% url 'create' %}" method="POST">
+        <form action="{% url 'create' %}" method="POST" style="font-family: 'MedievalSharp'; color: white;">
             {% csrf_token %} 
             <div class="row">
                 <div class="col-12 p-2">
-                    <label for="level" class="form-label" style = "font-family: 'MedievalSharp'; color: white;">Level (only needed for public room)</label>
+                    <label for="isAIGame" class="form-label">Is this an AI Game?</label>
+                    <select class="custom-select" id="isAIGame" name="isAIGame" required>
+                        <option value="undef" >Choose...</option>
+                        <option value="True">Yes</option>
+                        <option value="False">No</option>
+                    </select>
+                </div>
+
+                <div class="col-12 p-2" id="multiGameGroup">
+                    <label for="username" class="form-label">Opponent Username (leave blank to display game on lobby) </label>
+                    <div class="input-group">
+                        <span class="input-group-text">@</span>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Username">
+                    </div>
+                </div>
+
+                <div class="col-12 p-2" id="aiGameGroup">
+                    <label for="level" class="form-label">Level (only needed for public room)</label>
                     <select class="custom-select" id="level" name="level" required>
                         <option value="undef" >Choose...</option>
                         <option value="Beginner">Beginner</option>
@@ -33,8 +56,32 @@
                         <option value="Advanced">Advanced</option>
                     </select>
                 </div>
+
                 <button class="btn btn-primary m-3" type="submit" style = "font-family: 'MedievalSharp'; color: white;">Create Game</button>
             </div>
         </form>
     </div>
+
+    <script>
+        const check_field_value = (new_val) => {
+            if (new_val == 'True') {
+                $("#multiGameGroup").addClass('d-none');
+                $("#aiGameGroup").removeClass('d-none');
+            } else if (new_val == 'False') {
+                $("#multiGameGroup").removeClass('d-none');
+                $("#aiGameGroup").addClass('d-none');
+            } else if (new_val == 'undef') {
+                $("#multiGameGroup").addClass('d-none');
+                $("#aiGameGroup").addClass('d-none');
+            }
+        };
+    
+        $(document).ready(() => {
+            check_field_value($("#isAIGame").val());
+            $("#isAIGame").change(() => {
+                check_field_value($("#isAIGame").val());
+            });
+        });
+    </script>
 {% endblock body %}
+

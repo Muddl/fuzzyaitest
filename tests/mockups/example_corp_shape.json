@@ -1,0 +1,228 @@
+{
+    "whiteCorps": {
+        "kingCorp": {
+            "leader": {
+                "pos": "e1",
+                "color" : "w",
+                "rank" : "K",
+                "corp" : "kingCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "a1",
+                    "color" : "w",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "h1",
+                    "color" : "w",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "d1",
+                    "color" : "w",
+                    "rank" : "Q",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "d2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "e2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        },
+        "leftBishopCorp": {
+            "leader": {
+                "pos": "c1",
+                "color" : "w",
+                "rank" : "B",
+                "corp" : "leftBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "a2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "b2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "c2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "b1",
+                    "color" : "w",
+                    "rank" : "N",
+                    "corp" : "leftBishopCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        },
+        "rightBishopCorp": {
+            "leader": {
+                "pos": "f1",
+                "color" : "w",
+                "rank" : "B",
+                "corp" : "rightBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "f2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "g2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "h2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "g1",
+                    "color" : "w",
+                    "rank" : "N",
+                    "corp" : "rightBishopCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        }
+    },
+    "blackCorps": {
+        "kingCorp": {
+            "leader": {
+                "pos": "e8",
+                "color" : "b",
+                "rank" : "K",
+                "corp" : "kingCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "a8",
+                    "color" : "b",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "h8",
+                    "color" : "b",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "d8",
+                    "color" : "b",
+                    "rank" : "Q",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "d7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "e7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        },
+        "leftBishopCorp": {
+            "leader": {
+                "pos": "c8",
+                "color" : "b",
+                "rank" : "B",
+                "corp" : "leftBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "a7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "b7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "c7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "b7",
+                    "color" : "b",
+                    "rank" : "N",
+                    "corp" : "leftBishopCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        },
+        "rightBishopCorp": {
+            "leader": {
+                "pos": "f8",
+                "color" : "b",
+                "rank" : "B",
+                "corp" : "rightBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "f7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "g7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "h7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "g8",
+                    "color" : "b",
+                    "rank" : "N",
+                    "corp" : "rightBishopCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        }
+    }
+}

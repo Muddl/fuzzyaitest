@@ -3,8 +3,7 @@
 # We also were roughly following the sprint cycle chart given in the first week's presentation.
 # Next in progress for engine: Add knight blitzes, end states, timers, and a hook for the AI to latch into.
 from typing import Dict
-import random, json, uuid
-from enum import Enum
+import random, re, traceback
 
 # Constants
 INITIAL_BOARDSTATE = {
@@ -18,36 +17,243 @@ INITIAL_BOARDSTATE = {
     "a1": "wR", "b1": "wN", "c1": "wB", "d1": "wQ", "e1": "wK", "f1": "wB", "g1": "wN", "h1": "wR",
 }
 
-# Enums
-class Color(Enum):
-    WHITE = "w"
-    BLACK = "b"
-
-class Rank(Enum):
-    KING ="K"
-    QUEEN = "Q"
-    KNIGHT = "N"
-    ROOK = "R"
-    BISHOP = "B"
-    PAWN = "P"
-
-class WinFlag(Enum): # 0 for no kings captured, 1 for white king captured, 2 for black king captured
-    NONE = 0
-    WHITE = 1
-    BLACK = 2
-
-class ActionType(Enum):
-    MOVEMENT = "MOVEMENT"
-    ATTACK_ATTEMPT = "ATTACK_ATTEMPT"
-    HIGHLIGHT = "HIGHLIGHT"
+INITIAL_CORP_LIST = {
+    "w": {
+        "kingCorp": {
+            "leader": {
+                "pos": "e1",
+                "color" : "w",
+                "rank" : "K",
+                "corp" : "kingCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "a1",
+                    "color" : "w",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "h1",
+                    "color" : "w",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "d1",
+                    "color" : "w",
+                    "rank" : "Q",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "d2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "e2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        },
+        "leftBishopCorp": {
+            "leader": {
+                "pos": "c1",
+                "color" : "w",
+                "rank" : "B",
+                "corp" : "leftBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "a2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "b2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "c2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "b1",
+                    "color" : "w",
+                    "rank" : "N",
+                    "corp" : "leftBishopCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        },
+        "rightBishopCorp": {
+            "leader": {
+                "pos": "f1",
+                "color" : "w",
+                "rank" : "B",
+                "corp" : "rightBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "f2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "g2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "h2",
+                    "color" : "w",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "g1",
+                    "color" : "w",
+                    "rank" : "N",
+                    "corp" : "rightBishopCorp"
+                }
+            ],
+            "command_authority_remaining": 1
+        }
+    },
+    "b": {
+        "kingCorp": {
+            "leader": {
+                "pos": "e8",
+                "color" : "b",
+                "rank" : "K",
+                "corp" : "kingCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "a8",
+                    "color" : "b",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "h8",
+                    "color" : "b",
+                    "rank" : "R",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "d8",
+                    "color" : "b",
+                    "rank" : "Q",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "d7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                },
+                {
+                    "pos": "e7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "kingCorp"
+                }
+            ],
+            "command_authority_remaining": -999
+        },
+        "leftBishopCorp": {
+            "leader": {
+                "pos": "c8",
+                "color" : "b",
+                "rank" : "B",
+                "corp" : "leftBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "a7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "b7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "c7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "leftBishopCorp"
+                },
+                {
+                    "pos": "b8",
+                    "color" : "b",
+                    "rank" : "N",
+                    "corp" : "leftBishopCorp"
+                }
+            ],
+            "command_authority_remaining": -999
+        },
+        "rightBishopCorp": {
+            "leader": {
+                "pos": "f8",
+                "color" : "b",
+                "rank" : "B",
+                "corp" : "rightBishopCorp"
+            },
+            "under_command": [
+                {
+                    "pos": "f7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "g7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "h7",
+                    "color" : "b",
+                    "rank" : "P",
+                    "corp" : "rightBishopCorp"
+                },
+                {
+                    "pos": "g8",
+                    "color" : "b",
+                    "rank" : "N",
+                    "corp" : "rightBishopCorp"
+                }
+            ],
+            "command_authority_remaining": -999
+        }
+    }
+}
 
 # Classes
 
 class Piece:
-    def __init__(self, color, rank, pos):
+    def __init__(self, color, rank, pos, corp):
         self.color = color
         self.rank = rank
         self.pos = pos
+        self.corp = corp
     
     def getColor(self):
         return self.color
@@ -55,41 +261,33 @@ class Piece:
     def getRank(self):
         return self.rank
     
+    def getCorp(self):
+        return self.corp
+    
     def getPos(self):
         return self.pos
     
-    def getPair(self):
-        return { self.pos: (self.color + self.rank) }
+    def getTraits(self):
+        return eval(f"{{ 'pos': '{self.pos}', 'color': '{self.color}', 'rank': '{self.rank}', 'corp': '{self.corp}' }}")
     
     def __eq__(self, other):
         if isinstance(other, Piece):
-            return self.getPair() == other.getPair()        
-
-class Action:
-    def __init__(self, parsedActionType, parsedActivePiece, parsedTargetPiece):
-        self.actionType = ActionType(parsedActionType)
-        self.activePiece = Piece(Color(parsedActivePiece["color"]), Rank(parsedActivePiece["rank"]), parsedActivePiece["pos"])
-        if (self.actionType == ActionType.MOVEMENT) or (self.actionType == ActionType.ATTACK_ATTEMPT):
-            self.targetPiece = Piece(Color(parsedTargetPiece["color"]), Rank(parsedTargetPiece["rank"]), parsedTargetPiece["pos"])
-        else:
-            self.targetPiece = None
-        self.actionID = uuid.uuid4()
-    
-    # Overrides the equal method for moves. A move = another move - IMPORTANT
-    def __eq__(self, other):
-        if isinstance(other, Action):
-            return self.actionID == other.actionID
-        return False
+            return self.getTraits() == other.getTraits()
+        
+    def __repr__(self):
+        return f"{{ pos: {self.pos}, color: {self.color}, rank: {self.rank}, corp: {self.corp} }}"
 
 class Boardstate:
     # Initializes an empty board and game in code (not gui)
-    def __init__(self, boardstate: Dict[str, str], whiteMove: bool, actionCounter: int):
+    def __init__(self, boardstate: Dict[str, str], whiteMove: bool, corpList, readyToBlitz, white_captured, black_captured):
         # Game board from white's perspective
         # NOTE - I've seen this done with just strings, numbers, etc.
         # All are probably more efficient but a pain to read and work with
         
-        self.board = boardstate
+        self.board = boardstate # Board representation in Position Obj notation
         
+        self.corpLists = corpList # Contains the current state of corps & available actions for each
+
         self.attackDict = {
             "K": {"K": 4, "Q": 4, "N": 4, "B": 4, "R": 5, "P": 1},
             "Q": {"K": 4, "Q": 4, "N": 4, "B": 4, "R": 5, "P": 2},
@@ -100,105 +298,191 @@ class Boardstate:
         }
         
         self.whiteMove = whiteMove  # Keeps track of whose turn it is
-        self.actionCounter = actionCounter  # Counts number of moves (or actions) made
-        self.kingDead = WinFlag(0) # Initially no kings dead  
-        self.knightsAttacked = []  # Stores the position of knights that have attempted an attack already
-        self.blitzableKnightSquares = []  # Stores the possible squares a knight could blitz from.
+        self.kingDead = None # Initially no kings dead  
+        self.readyToBlitz = readyToBlitz  # Stores the traits of knights ready to blitz
+        self.white_captured = white_captured
+        self.black_captured = black_captured
         self.gameHistory = []  # Keeps a history of the actions in a game.
-    
+        
     # Function that moves the pieces, adds it to the game history, and swaps players - IMPORTANT
     def processAction(self, parsedAction):
         if (parsedAction["actionType"] == "MOVEMENT"):
+            # Local vars
             activePos = parsedAction["activePiece"]["pos"]
             activeColor = parsedAction["activePiece"]["color"]
             activeRank = parsedAction["activePiece"]["rank"]
-            
+            activeCorp = parsedAction["activePiece"]["corp"]
             targetPos = parsedAction["targetPiece"]["pos"]
-            targetRank = parsedAction["targetPiece"]["rank"]
+            friendly = 'w' if self.whiteMove else 'b'
+            enemy = 'b' if self.whiteMove else 'w'
             
-            (empt_spaces, enem_spaces) = self.getValidMoveset(Piece(activeColor, activeRank, activePos))
-            
-            if activePos in self.board: # Selected tile must contain a piece on the board
-                if targetPos in empt_spaces:  # If the square is in the piece's empty_squares set
-                    curPiece = self.board.pop(activePos)  # Sets the square that the piece is on to empty (the piece is "lifted" from the table)
-                    self.board[targetPos] = curPiece  # "Places" the piece onto that square
-                    
-                    # Cleanup
-                    self.actionCounter = self.actionCounter + 1
+            try:
+            # GetValidMoveset
+                (in_range, setup, movement) = self.getValidMoveset(Piece(activeColor, activeRank, activePos, activeCorp))
 
-                    if (activeRank == "N"): # Add knight to moved
-                        self.knightsAttacked.append(targetPos)
-                        # TODO: Add knight blitzable squares calc here
-                    if (self.actionCounter == 3):
-                        self.actionCounter = 0
-                        self.whiteMove = not self.whiteMove  # Swaps players.
-                        self.knightsAttacked = []
-                        self.altKnightSquares = {}
-                    self.gameHistory.append(parsedAction)  # Adds the action to the game history
-                    
-                    return True, self.board, self.actionCounter, self.whiteMove
+                # processMovement
+                if activePos in self.board: # Selected tile must contain a piece on the board
+                    if targetPos in movement or targetPos in setup:  # If the square is in the piece's movement or setup set [empty targetPos]
+                        # Move piece in engine local board b/c previously validated
+                        curPiece = self.board.pop(activePos)
+                        self.board[targetPos] = curPiece
+                        
+                        # Decrement command_authority_remaining, change corp data to reflect move
+                        self.corpLists[friendly][activeCorp]["command_authority_remaining"] = self.corpLists[friendly][activeCorp]["command_authority_remaining"] - 1
+                        if activeRank == "B" or activeRank == "K":
+                            self.corpLists[friendly][activeCorp]["leader"]["pos"] = targetPos
+                        else:
+                            for piece in self.corpLists[friendly][activeCorp]["under_command"]:
+                                if piece["pos"] == activePos:
+                                    piece["pos"] = targetPos
+
+                        if (activeRank == "N"): # Add knight to moved
+                            self.readyToBlitz.append(targetPos)
+                        
+                        # Check for any remaining actions
+                        turnend = True
+                        for corp in self.corpLists[friendly]:
+                            if self.corpLists[friendly][corp]["command_authority_remaining"] == 1:
+                                turnend = False
+                        
+                        if turnend:
+                            for corp in self.corpLists[friendly]:
+                                self.corpLists[friendly][corp]["command_authority_remaining"] = -999
+                            for corp in self.corpLists[enemy]:
+                                self.corpLists[enemy][corp]["command_authority_remaining"] = 1
+                            self.whiteMove = not self.whiteMove  # Swaps players.
+                            self.readyToBlitz = []
+                            
+                        self.gameHistory.append(parsedAction)  # Adds the action to the game history
+                        
+                        return True, self.board, self.corpLists, self.whiteMove, self.readyToBlitz
+                    else:
+                        return False, None, None, None, None
                 else:
-                    return False, None
-            else:
-                return False, None
+                    return False, None, None, None, None
+            except BaseException:
+                tb = traceback.format_exc()
+                print(tb)
                     
         elif (parsedAction["actionType"] == "ATTACK_ATTEMPT"):
             activePos = parsedAction["activePiece"]["pos"]
             activeColor = parsedAction["activePiece"]["color"]
             activeRank = parsedAction["activePiece"]["rank"]
-            
+            activeCorp = parsedAction["activePiece"]["corp"]
             targetPos = parsedAction["targetPiece"]["pos"]
             targetRank = parsedAction["targetPiece"]["rank"]
+            targetCorp = parsedAction["targetPiece"]["corp"]
+            friendly = 'w' if self.whiteMove else 'b'
+            enemy = 'b' if self.whiteMove else 'w'
             
-            (empt_spaces, enem_spaces) = self.getValidMoveset(Piece(activeColor, activeRank, activePos))
+            try:
+                (in_range, setup, movement) = self.getValidMoveset(Piece(activeColor, activeRank, activePos, activeCorp))
             
-            if activePos in self.board: # Selected tile must contain a piece on the board
-                if targetPos in enem_spaces:
-                    if activeRank == "N" and parsedAction["blitz"]: # Check for blitz flag
-                        if ((activePos not in self.knightsAttacked) and (targetPos in self.blitzableKnightSquares)): # Check for valid blitz parameters
-                            (outcome, roll_val) = self.attackResolver(activeRank, targetRank, True) # Blitz outcome
-                            self.knightsAttacked = targetPos
-                            self.blitzableKnightSquares = []
+                if activePos in self.board: # Selected tile must contain a piece on the board
+                    if targetPos in in_range:
+                            # Roll for outcome of attack
+                            if activeRank == "N" and targetPos in self.readyToBlitz: 
+                                (outcome, roll_val) = self.attackResolver(activeRank, targetRank, True) # Blitz outcome
+                                isBlitz = True
+                            else:
+                                (outcome, roll_val) = self.attackResolver(activeRank, targetRank, False) # Normal combat outcome
+                                isBlitz = False
+                            
+                            # If an blitzing knight fails its attack, remove the ability to repeat the blitz
+                            if not outcome and isBlitz and targetPos in self.readyToBlitz:
+                                self.readyToBlitz.pop(targetPos)
+                            
+                            # Remove successfully attacked pieces from the boardstate
+                            if outcome and activeRank != "R": # On successful capture
+                                curPiece = self.board.pop(activePos)  # Sets the square that the piece is on to empty (the piece is "lifted" from the table)
+                                self.board[targetPos] = curPiece  # "Places" the piece onto that square
+                                if enemy == 'b':
+                                    self.black_captured.append(targetRank)
+                                    print(f'Captured a black piece: {self.black_captured}')
+                                elif enemy == 'w':
+                                    self.white_captured.append(targetRank)
+                                    print(f'Captured a white piece: {self.white_captured}')
+                            elif outcome and activeRank == "R":
+                                self.board.pop(targetPos)
+                                if enemy == 'b':
+                                    self.black_captured.append(targetRank)
+                                    print(f'Captured a black piece: {self.black_captured}')
+                                elif enemy == 'w':
+                                    self.white_captured.append(targetRank)
+                                    print(f'Captured a white piece: {self.white_captured}')
+                            
+                            # Update corpList to reflect boardstate changes
+                            # Remove successfully attacked pieces from the corpList & delegate under_command as needed
+                            if outcome:
+                                if activeRank in ["K", "B"]:
+                                    self.corpLists[friendly][activeCorp]["leader"]["pos"] = targetPos
+                                elif activeRank == "R":
+                                    pass
+                                else:
+                                    for index, piece in enumerate(self.corpLists[friendly][activeCorp]["under_command"]):
+                                        if piece == parsedAction["activePiece"]:
+                                            self.corpLists[friendly][activeCorp]["under_command"][index]["pos"] = targetPos
+                                
+                                if targetRank == "K":
+                                    self.corpLists[enemy].pop(targetCorp)
+                                elif targetRank == "B":
+                                    to_be_delegated = []
+                                    for piece in self.corpLists[enemy][targetCorp]["under_command"]:
+                                        piece["corp"] = "kingCorp"
+                                        to_be_delegated.append(piece)
+                                    self.corpLists[enemy].pop(targetCorp)
+                                    self.corpLists[enemy]["kingCorp"]["under_command"] = self.corpLists[enemy]["kingCorp"]["under_command"] + to_be_delegated
+                                else:
+                                    for index, piece in enumerate(self.corpLists[enemy][targetCorp]["under_command"]):
+                                        if piece == parsedAction["targetPiece"]:
+                                            print("Removing successfully defeated piece pos from corpList")
+                                            del self.corpLists[enemy][targetCorp]["under_command"][index]
+                            
+                            # Decrement command_authority_remaining
+                            self.corpLists[friendly][activeCorp]["command_authority_remaining"] = self.corpLists[friendly][activeCorp]["command_authority_remaining"] - 1
+                            
+                            # Check for any remaining actions
+                            turnend = True
+                            for corp in self.corpLists[friendly]:
+                                if self.corpLists[friendly][corp]["command_authority_remaining"] == 1:
+                                    turnend = False
+                            
+                            # Process the end of a turn
+                            if turnend:
+                                for corp in self.corpLists[friendly]:
+                                    self.corpLists[friendly][corp]["command_authority_remaining"] = -999
+                                for corp in self.corpLists[enemy]:
+                                    self.corpLists[enemy][corp]["command_authority_remaining"] = 1
+                                self.whiteMove = not self.whiteMove  # Swaps players.
+                                self.readyToBlitz = []
+                            
+                            self.gameHistory.append(parsedAction)  # Adds the action to the game history
+                            
+                            # Endgame check
+                            isEndGame = False
+                            if (outcome and targetRank == "K" and "kingCorp" not in self.corpLists[enemy]): # Game over?
+                                self.kingDead = activeColor # Set to proper color
+                                isEndGame = True
+                            
+                            return True, outcome, self.board, roll_val, self.corpLists, self.whiteMove, isBlitz, self.readyToBlitz, isEndGame, self.kingDead, self.white_captured, self.black_captured
                     else:
-                        (outcome, roll_val) = self.attackResolver(activeRank, targetRank, False) # Normal combat outcome
-                    
-                    if outcome and activeRank != "R": # On successful capture
-                        curPiece = self.board.pop(activePos)  # Sets the square that the piece is on to empty (the piece is "lifted" from the table)
-                        self.board[targetPos] = curPiece  # "Places" the piece onto that square
-                    elif outcome and activeRank == "R":
-                        self.board.pop(targetPos)
-                    
-                    # Cleanup
-                    self.actionCounter = self.actionCounter + 1
-                    # Post combat check
-                    if (outcome and targetRank == "K"): # Game over?
-                        self.kingDead = WinFlag(1) if activeColor == "w" else WinFlag(2) # Set to proper color
-                    if self.actionCounter == 3:
-                        self.actionCounter = 0
-                        self.whiteMove = not self.whiteMove  # Swaps players.
-                        self.knightsAttacked = []
-                        self.altKnightSquares = {}
-                    self.gameHistory.append(parsedAction)  # Adds the action to the game history
-                    
-                    if activeRank == "N" and parsedAction["blitz"]:
-                        return True, outcome, self.board, roll_val, self.actionCounter, self.whiteMove, parsedAction["blitz"]
-                    else:
-                        return True, outcome, self.board, roll_val, self.actionCounter, self.whiteMove
+                        return False, False, None, None, None, False, False, None, False, None, None, None
                 else:
-                    print("failed targetPos in enem_spaces")
-                    return False, False, None, -1, False
-            else:
-                print("failed activePos in self.board")
-                return False, False, None, -1, False
+                    return False, False, None, None, None, False, False, None, False, None, None, None
+            except BaseException:
+                tb = traceback.format_exc()
+                print(tb)
                     
         elif (parsedAction["actionType"] == "HIGHLIGHT"):
             activePos = parsedAction["activePiece"]["pos"]
             activeColor = parsedAction["activePiece"]["color"]
             activeRank = parsedAction["activePiece"]["rank"]
-            (empt_spaces, enem_spaces) = self.getValidMoveset(Piece(activeColor, activeRank, activePos))
+            activeCorp = parsedAction["activePiece"]["corp"]
+            
+            (in_range, setup, movement) = self.getValidMoveset(Piece(activeColor, activeRank, activePos, activeCorp))
             
             if activePos in self.board:
-                return True, (empt_spaces + enem_spaces)
+                return True, in_range, setup, movement
             else:
                 return False, None
     
@@ -221,251 +505,349 @@ class Boardstate:
             case 'R':
                 return self.getRookValidMoveset(selected)
             case 'K':
-                return self.getValidRoyalMoveset(selected)
+                return self.getValidKingMoveset(selected)
             case 'Q':
-                return self.getValidRoyalMoveset(selected)
+                return self.getValidQueenMoveset(selected)
             case 'N':
                 return self.getValidKnightMoveset(selected)
             case _:
-                return ([], [])
+                return ([], [], [])
     
     # Pawns can only move forward, but they CAN move diagonally as well as attack diagonally, so long as it's toward enemy
     def getPawnValidMoveset(self, selected):
-        selectedColor = selected.getColor()
-        selectedRank = selected.getRank()
-        selectedPos = selected.getPos()
+        selectedColor = selected.color
+        selectedPos = selected.pos
+        selectedCorp = selected.corp
+        friendly = 'w' if self.whiteMove else 'b'
         
-        empty_spaces = []
-        enemy_spaces = []
+        in_range = []
+        setup = []
+        movement = []
         
         base_list = getAdjSquares(selectedPos, True) # Base surrounding adjacent squares for current pawn position
         
-        if selectedRank == "P" and self.actionCounter < 3: # Confirm we've been passed a pawn & actions remain
+        if (selected.getTraits() in self.corpLists[friendly][selectedCorp]["under_command"]) and self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Confirm we've been passed a pawn in the correct corp & actions remain
             if (self.whiteMove and selectedColor == "w"): # Relative forward movement to white play
                 for position in base_list:
                     if int(position[1]) > int(selectedPos[1]): # If space is relatively forward
                         if (not (position in self.board)): # If empty
-                            empty_spaces.append(position)
+                            movement.append(position)
                         elif (self.board.get(position)[0] == "b"): # If enemy
-                            enemy_spaces.append(position)
+                            in_range.append(position)
             elif ((not self.whiteMove) and selectedColor == "b"): # Relative forward movement to black play
                 for position in base_list:
                     if int(position[1]) < int(selectedPos[1]): # If space is relatively forward
                         if (not (position in self.board)): # If empty
-                            empty_spaces.append(position)
+                            movement.append(position)
                         elif (self.board.get(position)[0] == "w"): # If enemy
-                            enemy_spaces.append(position)
+                            in_range.append(position)
         
-        return (empty_spaces, enemy_spaces)
+        return (list(set(in_range)), list(set(setup)), list(set(movement)))
     
     def getBishopValidMoveset(self, selected):
-        selectedColor = selected.getColor()
-        selectedRank = selected.getRank()
         selectedPos = selected.getPos()
+        selectedCorp = selected.getCorp()
+        friendly = 'w' if self.whiteMove else 'b'
         enemy = 'b' if self.whiteMove else 'w'
+        
+        in_range = []
+        setup = []
+        movement = []
+        
+        base_list = getAdjSquares(selectedPos, True) # Base surrounding adjacent squares for current pawn position
+        
+        if (selected.getTraits() == self.corpLists[friendly][selectedCorp]["leader"]): # Confirm piece is a bishop & the leader of its corp
+            if self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Attacks/Captures/Full Movement
+                max_bishop_range = [
+                    f"{selectedPos[0]}{chr(ord(selectedPos[1])+1)}",  f"{selectedPos[0]}{chr(ord(selectedPos[1])+2)}", # North Pos
+                    f"{selectedPos[0]}{chr(ord(selectedPos[1])-1)}",  f"{selectedPos[0]}{chr(ord(selectedPos[1])-2)}", # South Pos
+                    f"{chr(ord(selectedPos[0])+1)}{selectedPos[1]}",  f"{chr(ord(selectedPos[0])+2)}{selectedPos[1]}", # East Pos
+                    f"{chr(ord(selectedPos[0])-1)}{selectedPos[1]}",  f"{chr(ord(selectedPos[0])-2)}{selectedPos[1]}", # West Pos
+                    f"{chr(ord(selectedPos[0])+1)}{chr(ord(selectedPos[1])+1)}",  f"{chr(ord(selectedPos[0])+2)}{chr(ord(selectedPos[1])+2)}", # NE Pos
+                    f"{chr(ord(selectedPos[0])-1)}{chr(ord(selectedPos[1])+1)}",  f"{chr(ord(selectedPos[0])-2)}{chr(ord(selectedPos[1])+2)}", # NW Pos
+                    f"{chr(ord(selectedPos[0])+1)}{chr(ord(selectedPos[1])-1)}",  f"{chr(ord(selectedPos[0])+2)}{chr(ord(selectedPos[1])-2)}", # SE Pos
+                    f"{chr(ord(selectedPos[0])-1)}{chr(ord(selectedPos[1])-1)}",  f"{chr(ord(selectedPos[0])-2)}{chr(ord(selectedPos[1])-2)}", # SW Pos
+                ]
+                cleaned_range = [pos for pos in max_bishop_range if isValidAlgeNotation(pos)]
+                in_range = [pos for pos in cleaned_range if ((pos in base_list) and (str(self.board.get(pos))[0] == enemy))]
+                cleaned_no_attackable_range = [pos for pos in cleaned_range if pos not in in_range]
+                functional_range = [pos for pos in cleaned_no_attackable_range if not self.isLineBlocked(selectedPos, pos)]
+                for pos in functional_range:
+                    if pos not in self.board:
+                        movement.append(pos)
+                for pos in movement:
+                    adj_to_move = getAdjSquares(pos, True)
+                    enemies_adj_to_pos = [pos for pos in adj_to_move if str(self.board.get(pos))[0] == enemy]
+                    if len(enemies_adj_to_pos) > 0:
+                        setup.append(pos)
+                movement = [pos for pos in movement if pos not in setup]
+            elif self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 0: # Commander's Movement
+                for pos in base_list:
+                    if pos not in self.board:
+                        movement.append(pos)
 
-        base_list = getAdjSquares(selectedPos, True)
-        empty_spaces = []
-        enemy_spaces = []
-
-        if selectedRank == 'B' and self.actionCounter < 3:
-            if selectedColor != enemy:
-                for position in base_list:
-                    sublist = getAdjSquares(position, True)
-                    for subpos in sublist:
-                        if subpos not in self.board:
-                            if subpos not in empty_spaces:
-                                empty_spaces.append(subpos)
-                        elif self.board.get(subpos)[0] == enemy:
-                            enemy_spaces.append(subpos)
-
-        return (empty_spaces, enemy_spaces)
+        return (list(set(in_range)), list(set(setup)), list(set(movement)))
     
     def getRookValidMoveset(self, selected):
-        selectedColor = selected.getColor()
-        selectedRank = selected.getRank()
-        selectedPos = selected.getPos()
-        enemy = 'b' if self.whiteMove else 'w'
+        def getRookMoveRange(pos):
+            max_rook_move_range =  [
+                f"{pos[0]}{chr(ord(pos[1])+1)}", f"{pos[0]}{chr(ord(pos[1])+2)}", # North Pos
+                f"{pos[0]}{chr(ord(pos[1])-1)}", f"{pos[0]}{chr(ord(pos[1])-2)}", # South Pos
+                f"{chr(ord(pos[0])+1)}{pos[1]}", f"{chr(ord(pos[0])+2)}{pos[1]}", # East Pos
+                f"{chr(ord(pos[0])-1)}{pos[1]}", f"{chr(ord(pos[0])-2)}{pos[1]}", # West Pos
+                f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])+2)}", # NE Pos
+                f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])+2)}", # NW Pos
+                f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])-2)}", # SE Pos
+                f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])-2)}", # SW Pos
+            ]
+            return [pos for pos in max_rook_move_range if isValidAlgeNotation(pos)]
 
-        base_list = getAdjSquares(selectedPos, True)
-        empty_spaces = []
-        enemy_spaces = []
-
-        if selectedRank == 'R' and self.actionCounter < 3:
-            if selectedColor != enemy:
-                # Movement
-                for position in base_list:
-                    sublist = getAdjSquares(position, True)
-                    for subpos in sublist:
-                        if subpos not in self.board:
-                            if subpos not in empty_spaces:
-                                empty_spaces.append(subpos)
-                        elif self.board.get(subpos)[0] == enemy:
-                            enemy_spaces.append(subpos)
-
-                # Calculate all the squares the rook can target for an attack
-                east_range = ord(selectedPos[0]) + 3
-                west_range = ord(selectedPos[0]) - 3
-                north_range = int(selectedPos[1]) + 3
-                south_range = int(selectedPos[1]) - 3
-
-                # Iterates through each square and checks that a square is not out of bounds and is an enemy
-                for r in range(south_range, north_range + 1):
-                    if 0 < r < 9:
-                        for c in range(west_range, east_range + 1):
-                            if 96 < c < 106:
-                                target = str(chr(c)) + str(r)
-                                if target in self.board:
-                                    if self.board[target][0] == enemy and target not in enemy_spaces:
-                                        enemy_spaces.append(target)
-        return (empty_spaces, enemy_spaces)
-    
-    # For both kings and queens
-    def getValidRoyalMoveset(self, selected):
-        selectedColor = selected.getColor()
-        selectedRank = selected.getRank()
-        selectedPos = selected.getPos()
-        enemy = 'b' if self.whiteMove else 'w'
-
-        base_list = getAdjSquares(selectedPos, True)
-        empty_spaces = []
-        enemy_spaces = []
-
-        if (selectedRank in ["K", "Q"] and self.actionCounter < 3):
-            if selectedColor != enemy:
-                for position in base_list:
-                    sublist = getAdjSquares(position, True)
-                    for subpos in sublist:
-                        metalist = getAdjSquares(subpos, True)
-                        for metapos in metalist:
-                            if metapos not in self.board:
-                                if metapos not in empty_spaces:
-                                    empty_spaces.append(metapos)
-                            elif self.board.get(metapos)[0] == enemy:
-                                if metapos not in enemy_spaces:
-                                    enemy_spaces.append(metapos)
+        def getRookAttackRange(pos):
+            max_rook_attack_range = [
+                f"{pos[0]}{chr(ord(pos[1])+1)}", f"{pos[0]}{chr(ord(pos[1])+2)}", f"{pos[0]}{chr(ord(pos[1])+3)}", # North Pos
+                f"{pos[0]}{chr(ord(pos[1])-1)}", f"{pos[0]}{chr(ord(pos[1])-2)}", f"{pos[0]}{chr(ord(pos[1])-3)}", # South Pos
+                f"{chr(ord(pos[0])+1)}{pos[1]}", f"{chr(ord(pos[0])+2)}{pos[1]}", f"{chr(ord(pos[0])+3)}{pos[1]}", # East Pos
+                f"{chr(ord(pos[0])-1)}{pos[1]}", f"{chr(ord(pos[0])-2)}{pos[1]}", f"{chr(ord(pos[0])-3)}{pos[1]}", # West Pos
+                f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])+2)}", f"{chr(ord(pos[0])+3)}{chr(ord(pos[1])+3)}", # NE Pos
+                f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])+2)}", f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])+3)}", f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])+3)}", # NE Block Non-Linear Pos - North Half
+                f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])+3)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])+3)}{chr(ord(pos[1])+2)}", # NE Block Non-Linear Pos - South Half
+                f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])+2)}", f"{chr(ord(pos[0])-3)}{chr(ord(pos[1])+3)}", # NW Pos
+                f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])+2)}", f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])+3)}", f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])+3)}", # NW Block Non-Linear Pos - North Half
+                f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])-3)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])-3)}{chr(ord(pos[1])+2)}", # NW Block Non-Linear Pos - South Half
+                f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])-2)}", f"{chr(ord(pos[0])+3)}{chr(ord(pos[1])-3)}", # SE Pos
+                f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])-2)}", f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])-3)}", f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])-3)}", # SE Block Non-Linear Pos - North Half
+                f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])+3)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])+3)}{chr(ord(pos[1])-2)}", # SE Block Non-Linear Pos - South Half
+                f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])-2)}", f"{chr(ord(pos[0])-3)}{chr(ord(pos[1])-3)}", # SW Pos
+                f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])-2)}", f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])-3)}", f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])-3)}", # SW Block Non-Linear Pos - North Half
+                f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])-3)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])-3)}{chr(ord(pos[1])-2)}", # SW Block Non-Linear Pos - South Half
+            ]
+            return [pos for pos in max_rook_attack_range if isValidAlgeNotation(pos)]
         
-        return (empty_spaces, enemy_spaces)
+        selectedPos = selected.pos
+        selectedCorp = selected.corp
+        friendly = 'w' if self.whiteMove else 'b'
+        enemy = 'b' if self.whiteMove else 'w'
+        
+        in_range = []
+        setup = []
+        movement = []
+        
+        if (selected.getTraits() in self.corpLists[friendly][selectedCorp]["under_command"]) and (self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1):
+            in_range = [pos for pos in getRookAttackRange(selectedPos) if str(self.board.get(pos))[0] == enemy]
+            base_move_range = [pos for pos in getRookMoveRange(selectedPos) if pos not in self.board]
+            movement = [pos for pos in base_move_range if not self.isLineBlocked(selectedPos, pos)]
+            for pos in in_range:
+                attackable_from = getRookAttackRange(pos)
+                for pos in attackable_from:
+                    if pos in movement:
+                        setup.append(pos)
+            movement = [pos for pos in movement if pos not in setup]
+
+        return (list(set(in_range)), list(set(setup)), list(set(movement)))
+    
+    def getValidQueenMoveset(self, selected):
+        selectedPos = selected.pos
+        selectedCorp = selected.corp
+        friendly = 'w' if self.whiteMove else 'b'
+        enemy = 'b' if self.whiteMove else 'w'
+
+        base_list = getAdjSquares(selectedPos, True)
+        in_range = []
+        setup = []
+        movement = []
+
+        if (selected.getTraits() in self.corpLists[friendly][selectedCorp]["under_command"]) and (self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1):
+            in_range = [pos for pos in base_list if str(self.board.get(pos))[0] == enemy]
+            
+            first_iter_moves = [pos for pos in base_list if pos not in self.board]
+            movement = movement + first_iter_moves
+            second_iter_moves = []
+            for pos in first_iter_moves:
+                sublist = getAdjSquares(pos, True)
+                for pos in sublist:
+                    if pos not in self.board:
+                        second_iter_moves.append(pos)
+            movement = movement + second_iter_moves
+            third_iter_moves = []
+            for pos in second_iter_moves:
+                sublist = getAdjSquares(pos, True)
+                for pos in sublist:
+                    if pos not in self.board:
+                        third_iter_moves.append(pos)
+            movement = movement + third_iter_moves
+            movement = list(set(movement))
+            
+            for pos in movement:
+                adj_to_move = getAdjSquares(pos, True)
+                enemies_adj_to_pos = [pos for pos in adj_to_move if str(self.board.get(pos))[0] == enemy]
+                if len(enemies_adj_to_pos) > 0:
+                    setup.append(pos)
+            movement = [pos for pos in movement if pos not in setup]
+        
+        return (list(set(in_range)), list(set(setup)), list(set(movement)))
+    
+    def getValidKingMoveset(self, selected):
+        selectedPos = selected.pos
+        selectedCorp = selected.corp
+        friendly = 'w' if self.whiteMove else 'b'
+        enemy = 'b' if self.whiteMove else 'w'
+
+        base_list = getAdjSquares(selectedPos, True)
+        in_range = []
+        setup = []
+        movement = []
+        
+        print(selected.getTraits())
+        if (selected.getTraits() == self.corpLists[friendly][selectedCorp]["leader"]): # Confirm piece is a bishop & the leader of its corp
+            if self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Attacks/Captures/Full Movement
+                in_range = [pos for pos in base_list if str(self.board.get(pos))[0] == enemy]
+                
+                first_iter_moves = [pos for pos in base_list if pos not in self.board]
+                movement = movement + first_iter_moves
+                second_iter_moves = []
+                for pos in first_iter_moves:
+                    sublist = getAdjSquares(pos, True)
+                    for pos in sublist:
+                        if pos not in self.board:
+                            second_iter_moves.append(pos)
+                movement = movement + second_iter_moves
+                third_iter_moves = []
+                for pos in second_iter_moves:
+                    sublist = getAdjSquares(pos, True)
+                    for pos in sublist:
+                        if pos not in self.board:
+                            third_iter_moves.append(pos)
+                movement = list(set(third_iter_moves))
+                movement = movement + third_iter_moves
+                movement = list(set(movement))
+                
+                for pos in movement:
+                    adj_to_move = getAdjSquares(pos, True)
+                    enemies_adj_to_pos = [pos for pos in adj_to_move if str(self.board.get(pos))[0] == enemy]
+                    if len(enemies_adj_to_pos) > 0:
+                        setup.append(pos)
+                movement = [pos for pos in movement if pos not in setup]
+            elif self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 0: # Commander's Movement
+                for pos in base_list:
+                    if pos not in self.board:
+                        movement.append(pos)
+        
+        return (list(set(in_range)), list(set(setup)), list(set(movement)))
     
     def getValidKnightMoveset(self, selected):
-        selected_color = selected.getColor()
-        selected_rank = selected.getRank()
-        selected_pos = selected.getPos()
+        selectedPos = selected.pos
+        selectedCorp = selected.corp
+        friendly = 'w' if self.whiteMove else 'b'
         enemy = 'b' if self.whiteMove else 'w'
 
-        empty_squares = []
-        enemy_squares = []
-
-        base_list = getAdjSquares(selected_pos, True)
-        if selected_rank == 'N':
-            if selected_color != enemy:
-                # A knight cannot attack then move, but it can repeatedly attack after its initial attack.
-                # As such, adjacent enemies will still be added.
-                if selected_pos in self.knightsAttacked:
-                    for position in base_list:
-                        if position in self.board:
-                            if self.board[0] == enemy:
-                                enemy_squares.append(position)
-
-                else:
-                    counter = 0
-                    container = []
-                    while counter < 5:
-                        step_list = []
-                        if counter == 0:
-                            for position in base_list:
-                                if position not in self.board:
-                                    empty_squares.append(position)
-                                    step_list.append(position)
-                                elif self.board[position][0] is enemy:
-                                    enemy_squares.append(position)
-                            container.append(step_list)
-                        elif counter < 4:
-                            for position in container[counter - 1]:
-                                step_list2 = getAdjSquares(position, True)
-                                for i in step_list2:
-                                    if i not in self.board and i not in empty_squares:
-                                        empty_squares.append(i)
-                                        step_list.append(i)
-                                    elif i in self.board and i not in enemy_squares:
-                                        if self.board[i][0] == enemy:
-                                            enemy_squares.append(i)
-
-                            container.append(step_list)
-                        else:
-                            for position in container[counter - 1]:
-                                step_list2 = getAdjSquares(position, True)
-                                for i in step_list2:
-                                    if i in self.board and i not in enemy_squares:
-                                        if self.board[i][0] == enemy:
-                                            enemy_squares.append(i)
-                        counter += 1
-
-            # Cross check the empty squares and enemy squares and give valid landing squares for a blitz
-            # IMPORTANT NOTE - I don't know how the knightLanding Squares are going to be stored/handled.
-            # The following code creates a dictionary that stores an array of the valid squares the knight can land for a blitz.
-            blitzDict = {}
-            for i in enemy_squares:
-                blitzDict[i] = []
-
-            for i in blitzDict:
-                tempList = getAdjSquares(i, True)
-                for j in tempList:
-                    if j in empty_squares:
-                        blitzDict[i].append(j)
-            self.blitzableKnightSquares = blitzDict
-
-        return (empty_squares, enemy_squares)
-
-    def parseMoveString(self, movestring):
-        activePos = movestring[0:2]
-        activeColor = self.board.get(activePos)[0]
-        activeRank = self.board.get(activePos)[1]
+        base_list = getAdjSquares(selectedPos, True)
+        in_range = []
+        setup = []
+        movement = []
         
-        targetPos = movestring[3:5]
-        targetColor = self.board.get(targetPos)[0]
-        targetRank = self.board.get(targetPos)[0]
+        if (selected.getTraits() in self.corpLists[friendly][selectedCorp]["under_command"]): # Confirm piece is a knight & under_command of its corp
+            if self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Non-Blitz Attacks/Setup/Movement
+                in_range = [pos for pos in base_list if str(self.board.get(pos))[0] == enemy]
+                
+                first_iter_moves = [pos for pos in base_list if pos not in self.board]
+                movement = movement + first_iter_moves
+                second_iter_moves = []
+                for pos in first_iter_moves:
+                    sublist = getAdjSquares(pos, True)
+                    for pos in sublist:
+                        if pos not in self.board:
+                            second_iter_moves.append(pos)
+                movement = movement + second_iter_moves
+                third_iter_moves = []
+                for pos in second_iter_moves:
+                    sublist = getAdjSquares(pos, True)
+                    for pos in sublist:
+                        if pos not in self.board:
+                            third_iter_moves.append(pos)
+                movement = movement + third_iter_moves
+                fourth_iter_moves = []
+                for pos in third_iter_moves:
+                    sublist = getAdjSquares(pos, True)
+                    for pos in sublist:
+                        if pos not in self.board:
+                            fourth_iter_moves.append(pos)
+                movement = movement + fourth_iter_moves
+                movement = list(set(movement))
+                
+                for pos in movement:
+                    adj_to_move = getAdjSquares(pos, True)
+                    enemies_adj_to_pos = [pos for pos in adj_to_move if str(self.board.get(pos))[0] == enemy]
+                    if len(enemies_adj_to_pos) > 0:
+                        setup.append(pos)
+                movement = [pos for pos in movement if pos not in setup]
+            elif (self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 0) and (selected.pos in self.readyToBlitz): # Blitz Attacking
+                in_range = [pos for pos in base_list if str(self.board.get(pos))[0] == enemy]
         
-        if targetPos not in self.board:
-            movementAction = {
-                'actionType': 'MOVEMENT',
-                'isAIGame': True,
-                'activePiece': {
-                    'pos': activePos,
-                    'color': activeColor,
-                    'rank': activeRank
-                },
-                'targetPiece': {
-                    'pos': targetPos,
-                    'color': targetColor,
-                    'rank': targetRank
-                },
-                'actionCount': self.actionCounter,
-                'whiteMove': self.whiteMove
-            }
-            return True, movementAction
-        elif activeRank != "N":
-            attackAttemptAction = {
-                'actionType': 'ATTACK_ATTEMPT',
-                'isAIGame': True,
-                'activePiece': {
-                    'pos': activePos,
-                    'color': activeColor,
-                    'rank': activeRank
-                },
-                'targetPiece': {
-                    'pos': targetPos,
-                    'color': targetColor,
-                    'rank': targetRank
-                },
-                'actionCount': self.actionCounter,
-                'whiteMove': self.whiteMove
-            }
-            return True, attackAttemptAction
-        elif targetPos in self.blitzableKnightSquares:
-            pass
-        return False, ""
-            
+        return (list(set(in_range)), list(set(setup)), list(set(movement)))
+    
+    def isLineBlocked(self, selectedPos, targetPos):
+        match getDirection(selectedPos, targetPos):
+            case 1:  # Directly North
+                for row in range(int(selectedPos[1]), int(targetPos[1]), 1):
+                    current_pos = selectedPos[0] + str(row+1)
+                    if current_pos in self.board:
+                        return True
+
+            case -1:  # Directly South
+                for row in range(int(selectedPos[1]), int(targetPos[1]), -1):
+                    current_pos = selectedPos[0] + str(row-1)
+                    if current_pos in self.board:
+                        return True
+
+            case 10:  # Directly East
+                norm_selectedPos = ord(selectedPos[0]) - ord("a")
+                norm_targetPos = ord(targetPos[0]) - ord("a")
+                for col in range(norm_selectedPos, norm_targetPos, 1):
+                    current_pos = chr(col + 1 + ord("a")) + selectedPos[1]
+                    if current_pos in self.board:
+                        return True
+
+            case -10:  # Directly West
+                norm_selectedPos = ord(selectedPos[0]) - ord("a")
+                norm_targetPos = ord(targetPos[0]) - ord("a")
+                for col in range(norm_selectedPos, norm_targetPos, -1):
+                    current_pos = chr(col - 1 + ord("a")) + selectedPos[1]
+                    if current_pos in self.board:
+                        return True
+
+            case 11:  # North + East
+                norm_selectedCol = ord(selectedPos[0]) - ord("a")
+                diagDistance = int(targetPos[1]) - int(selectedPos[1])
+                for current_offset in range(1, diagDistance):
+                    current_pos = chr(norm_selectedCol + current_offset + ord("a")) + str(int(selectedPos[1]) + current_offset)
+                    if current_pos in self.board:
+                        return True
+
+            case -9:  # North + West
+                norm_selectedCol = ord(selectedPos[0]) - ord("a")
+                diagDistance = int(targetPos[1]) - int(selectedPos[1])
+                for current_offset in range(1, diagDistance):
+                    current_pos = chr(norm_selectedCol - current_offset + ord("a")) + str(int(selectedPos[1]) + current_offset)
+                    if current_pos in self.board:
+                        return True
+
+            case 9:  # South + East
+                norm_selectedCol = ord(selectedPos[0]) - ord("a")
+                diagDistance = int(selectedPos[1]) - int(targetPos[1])
+                for current_offset in range(1, diagDistance):
+                    current_pos = chr(norm_selectedCol + current_offset + ord("a")) + str(int(selectedPos[1]) - current_offset)
+                    if current_pos in self.board:
+                        return True
+
+            case -11:  # South + West
+                norm_selectedCol = ord(selectedPos[0]) - ord("a")
+                diagDistance = int(selectedPos[1]) - int(targetPos[1])
+                for current_offset in range(1, diagDistance):
+                    current_pos = chr(norm_selectedCol - current_offset + ord("a")) + str(int(selectedPos[1]) - current_offset)
+                    if current_pos in self.board:
+                        return True
+
+        return False
 
 # Recieves an algebraic position on the board and a boolean representing if the returned list should include diagonal adjancencies
 # Returns a list of algebraic positions adjacent to the passed position
@@ -491,10 +873,10 @@ def getAdjSquares(pos, diag):
             adj = [f"a{str(row+1)}", f"a{str(row-1)}", f"b{str(row)}"] if not diag else [f"a{str(row+1)}", f"a{str(row-1)}", f"b{str(row)}", f"b{str(row-1)}", f"b{str(row+1)}"]
         if chr(col_int) == "h": # Right edge minus corners
             adj = [f"h{str(row+1)}", f"h{str(row-1)}", f"g{str(row)}"] if not diag else [f"h{str(row+1)}", f"h{str(row-1)}", f"g{str(row)}", f"g{str(row-1)}", f"g{str(row+1)}"]
-        if row == "8": # Top edge minus corners
+        if row == 8: # Top edge minus corners
             adj = [f"{chr(col_int+1)}8", f"{chr(col_int-1)}8", f"{chr(col_int)}7"] if not diag else [f"{chr(col_int+1)}8", f"{chr(col_int-1)}8", f"{chr(col_int)}7", f"{chr(col_int+1)}7", f"{chr(col_int-1)}7"]
-        if row == "1": # Bot edge minus corners
-            adj = [f"{chr(col_int+1)}1", f"{chr(col_int-1)}1", f"{chr(col_int)}2"] if not diag else [f"{chr(col_int+1)}1", f"{chr(col_int-1)}1", f"{chr(col_int)}2", f"{chr(col_int+2)}7", f"{chr(col_int-1)}2"]
+        if row == 1: # Bot edge minus corners
+            adj = [f"{chr(col_int+1)}1", f"{chr(col_int-1)}1", f"{chr(col_int)}2"] if not diag else [f"{chr(col_int+1)}1", f"{chr(col_int-1)}1", f"{chr(col_int)}2", f"{chr(col_int+1)}2", f"{chr(col_int-1)}2"]
     
     if ((pos not in edges) and (pos not in corners)):
         adj = [f"{chr(col_int)}{str(row+1)}", f"{chr(col_int)}{str(row-1)}", f"{chr(col_int+1)}{str(row)}", f"{chr(col_int-1)}{str(row)}"] if not diag else [f"{chr(col_int)}{str(row+1)}", f"{chr(col_int)}{str(row-1)}", f"{chr(col_int+1)}{str(row+1)}", f"{chr(col_int-1)}{str(row-1)}", f"{chr(col_int+1)}{str(row)}", f"{chr(col_int-1)}{str(row)}", f"{chr(col_int+1)}{str(row-1)}", f"{chr(col_int-1)}{str(row+1)}"]
@@ -522,73 +904,15 @@ def getDirection(startPos, endPos):
 
     return direction
 
-
-def getLine(board, empty_spaces, selectedPos, targetPos):
-    # Calculates the squares outside of adjacency for bishops and rooks (can move 2 in any direction in a line)
-    match getDirection(selectedPos, targetPos):
-        case 1:  # Directly North
-            for row in range(int(selectedPos[1]), int(targetPos[1])):
-                current_pos = selectedPos[0] + str(row)
-                if current_pos not in board:
-                    empty_spaces.append(current_pos)
-
-        case -1:  # Directly South
-            for row in range(int(targetPos[1]), int(selectedPos[1])):
-                current_pos = selectedPos[0] + str(row)
-                if current_pos not in board:
-                    empty_spaces.append(current_pos)
-
-        case 10:  # Directly East
-            norm_selectedPos = ord(selectedPos[0]) - ord("a")
-            norm_targetPos = ord(targetPos[0]) - ord("a")
-            distance = norm_targetPos - norm_selectedPos
-            for col in range(norm_selectedPos, norm_selectedPos + distance):
-                current_pos = chr(col + ord("a")) + selectedPos[1]
-                if current_pos not in board:
-                    empty_spaces.append(current_pos)
-
-        case -10:  # Directly West
-            norm_selectedPos = ord(selectedPos[0]) - ord("a")
-            norm_targetPos = ord(targetPos[0]) - ord("a")
-            distance = norm_selectedPos - norm_targetPos
-            for col in range(norm_targetPos, norm_targetPos + distance):
-                current_pos = chr(col + ord("a")) + selectedPos[1]
-                if current_pos not in board:
-                    empty_spaces.append(current_pos)
-
-        case 11:  # North + West
-            norm_selectedCol = ord(selectedPos[0]) - ord("a")
-            diagDistance = int(targetPos[1]) - int(selectedPos[1])
-            for current_offset in range(1, diagDistance):
-                current_pos = str(chr(norm_selectedCol - current_offset + ord("a")) + str(int(selectedPos[1] + current_offset)))
-                if current_pos not in board:
-                    empty_spaces.append(current_pos)
-
-        case -9:  # South + West
-            norm_selectedCol = ord(selectedPos[0]) - ord("a")
-            diagDistance = int(targetPos[1]) - int(selectedPos[1])
-            for current_offset in range(1, diagDistance):
-                current_pos = str(chr(norm_selectedCol - current_offset + ord("a")) + str(int(selectedPos[1] - current_offset)))
-                if current_pos not in board:
-                    empty_spaces.append(current_pos)
-
-        case 9:  # North + East
-            norm_selectedCol = ord(selectedPos[0]) - ord("a")
-            diagDistance = int(targetPos[1]) - int(selectedPos[1])
-            for current_offset in range(1, diagDistance):
-                current_pos = str(chr(norm_selectedCol + current_offset + ord("a")) + str(int(selectedPos[1] + current_offset)))
-                if current_pos not in board:
-                    empty_spaces.append(current_pos)
-
-        case -11:  # South + East
-            norm_selectedCol = ord(selectedPos[0]) - ord("a")
-            diagDistance = int(targetPos[1]) - int(selectedPos[1])
-            for current_offset in range(1, diagDistance):
-                current_pos = str(chr(norm_selectedCol + current_offset + ord("a")) + str(int(selectedPos[1] - current_offset)))
-                if current_pos not in board:
-                    empty_spaces.append(current_pos)
-
-    return empty_spaces
-
 def newboard():
     return INITIAL_BOARDSTATE
+
+def newcorplist():
+    return INITIAL_CORP_LIST
+
+def isValidAlgeNotation(potential_pos):
+    alge_notation = re.compile(r"[a-h][1-8]")
+    if alge_notation.match(potential_pos):
+        return True
+    else:
+        return False

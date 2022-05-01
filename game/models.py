@@ -1,8 +1,7 @@
-from tkinter import CASCADE
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
-from .engine import newboard
+from .engine import newboard, newcorplist
 
 
 # Create your models here.
@@ -24,6 +23,7 @@ class Game(models.Model):
     )
     status = models.IntegerField(default=1,choices=CHOICES)
     whitemove = models.BooleanField(default=True)
-    actioncount = models.IntegerField(default=0)
-    white_captured = ArrayField(models.CharField(max_length=1, blank=True), size=10, null=True)
-    black_captured = ArrayField(models.CharField(max_length=1, blank=True), size=10, null=True)
+    corplist = models.JSONField(default=newcorplist)
+    readytoblitz = ArrayField(models.CharField(max_length=2, blank=True), size=2, default=[])
+    white_captured = ArrayField(models.CharField(max_length=1, blank=True), size=10, default=[])
+    black_captured = ArrayField(models.CharField(max_length=1, blank=True), size=10, default=[])

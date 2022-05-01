@@ -1,0 +1,326 @@
+{
+    "pawnTests": [
+        {
+            "label": "getPawnValidMoveset-WhiteFullBoard",
+            "piece": {
+                "color": "w",
+                "rank": "P",
+                "pos": "d2",
+                "corp": "kingCorp"
+            }
+        },
+        {
+            "label": "getPawnValidMoveset-BlackFullBoard",
+            "piece": {
+                "color": "b",
+                "rank": "P",
+                "pos": "d7",
+                "corp": "kingCorp"
+            }
+        }
+    ],
+    "bishopTests": [
+        {
+            "label": "getBishopValidMoveset-WhiteFullBoard",
+            "piece": {
+                "color": "w",
+                "rank": "B",
+                "pos": "c1",
+                "corp": "leftBishopCorp"
+            }
+        },
+        {
+            "label": "getBishopValidMoveset-BlackFullBoard",
+            "piece": {
+                "color": "b",
+                "rank": "B",
+                "pos": "f8",
+                "corp": "rightBishopCorp"
+            }
+        }
+    ],
+    "rookTests": [
+        {
+            "label": "rookMovementNoEnem",
+            "action": {
+                "actionType": "MOVEMENT",
+                "activePiece": {
+                    "color": "w",
+                    "rank": "R",
+                    "pos": "d4"
+                }
+            },
+            "boardstate": {
+                "d4": "wR"
+            }
+        },
+        {
+            "label": "rookAttack",
+            "action": {
+                "actionType": "ATTACK_ATTEMPT",
+                "activePiece": {
+                    "pos": "d4",
+                    "color": "w",
+                    "rank": "R"
+                },
+                "targetPiece": {
+                    "pos": "d7",
+                    "color": "b",
+                    "rank": "P"
+                },
+                "blitz": false
+            },
+            "boardstate": {
+                "d4": "wR",
+                "d5": "wP",
+                "d7": "bP"
+            }
+        }
+    ],
+    "royalTests": [
+        {
+            "label": "kingMovementNoEnem",
+            "action": {
+                "actionType": "MOVEMENT",
+                "activePiece": {
+                    "color": "w",
+                    "rank": "K",
+                    "pos": "d4"
+                }
+            },
+            "boardstate": {
+                "d4": "wK"
+            }
+        },
+        {
+            "label": "queenMovementNoEnem",
+            "action": {
+                "actionType": "MOVEMENT",
+                "activePiece": {
+                    "color": "w",
+                    "rank": "Q",
+                    "pos": "d4"
+                }
+            },
+            "boardstate": {
+                "d4": "wQ"
+            }
+        },
+        {
+            "label": "kingAttack",
+            "action": {
+                "actionType": "ATTACK_ATTEMPT",
+                "activePiece": {
+                    "pos": "d4",
+                    "color": "w",
+                    "rank": "K"
+                },
+                "targetPiece": {
+                    "pos": "d5",
+                    "color": "b",
+                    "rank": "P"
+                },
+                "blitz": false
+            },
+            "boardstate": {
+                "d4": "wK",
+                "d5": "bP"
+            }
+        },
+        {
+            "label": "queenAttack",
+            "action": {
+                "actionType": "ATTACK_ATTEMPT",
+                "activePiece": {
+                    "pos": "d4",
+                    "color": "w",
+                    "rank": "Q"
+                },
+                "targetPiece": {
+                    "pos": "d5",
+                    "color": "b",
+                    "rank": "P"
+                },
+                "blitz": false
+            },
+            "boardstate": {
+                "d4": "wQ",
+                "d5": "bP"
+            }
+        }
+    ],
+    "knightTests": [
+        {
+            "label": "knightMovementNoEnem",
+            "action": {
+                "actionType": "MOVEMENT",
+                "activePiece": {
+                    "color": "w",
+                    "rank": "N",
+                    "pos": "d4"
+                }
+            },
+            "boardstate": {
+                "d4": "wN"
+            }
+        },
+        {
+            "label": "knightAttacknoBlitz",
+            "action": {
+                "actionType": "ATTACK_ATTEMPT",
+                "activePiece": {
+                    "pos": "d4",
+                    "color": "w",
+                    "rank": "N"
+                },
+                "targetPiece": {
+                    "pos": "d5",
+                    "color": "b",
+                    "rank": "P"
+                },
+                "blitz": false
+            },
+            "boardstate": {
+                "d4": "wN",
+                "d5": "bP"
+            }
+        },
+        {
+            "label": "knightAttackBlitz",
+            "action": {
+                "actionType": "ATTACK_ATTEMPT",
+                "activePiece": {
+                    "pos": "d4",
+                    "color": "w",
+                    "rank": "N"
+                },
+                "targetPiece": {
+                    "pos": "d5",
+                    "color": "b",
+                    "rank": "P"
+                },
+                "blitz": true
+            },
+            "boardstate": {
+                "d4": "wN",
+                "d5": "bP"
+            }
+        }
+    ],
+    "getLineTests": [
+        {
+            "label": "N",
+            "boardstate": {
+                "d4": "wB",
+                "d6": "bP"
+            },
+            "selectedPos": "d4",
+            "targetPos": "d6"
+        },
+        {
+            "label": "S",
+            "boardstate": {
+                "d4": "wB",
+                "d2": "bP"
+            },
+            "selectedPos": "d4",
+            "targetPos": "d2"
+        },
+        {
+            "label": "E",
+            "boardstate": {
+                "d4": "wB",
+                "f4": "bP"
+            },
+            "selectedPos": "d4",
+            "targetPos": "f4"
+        },
+        {
+            "label": "W",
+            "boardstate": {
+                "d4": "wB",
+                "b4": "bP"
+            },
+            "selectedPos": "d4",
+            "targetPos": "b4"
+        },
+        {
+            "label": "NW",
+            "boardstate": {
+                "d4": "wB",
+                "b6": "bP"
+            },
+            "selectedPos": "d4",
+            "targetPos": "b6"
+        },
+        {
+            "label": "NE",
+            "boardstate": {
+                "d4": "wB",
+                "f6": "bP"
+            },
+            "selectedPos": "d4",
+            "targetPos": "f6"
+        },
+        {
+            "label": "SW",
+            "boardstate": {
+                "d4": "wB",
+                "b2": "bP"
+            },
+            "selectedPos": "d4",
+            "targetPos": "b2"
+        },
+        {
+            "label": "SE",
+            "boardstate": {
+                "d4": "wB",
+                "f2": "bP"
+            },
+            "selectedPos": "d4",
+            "targetPos": "f2"
+        }
+    ],
+    "getDirectionTests": [
+        {
+            "label": "N",
+            "startPos": "d4",
+            "endPos": "d5"
+        },
+        {
+            "label": "S",
+            "startPos": "d4",
+            "endPos": "d3"
+        },
+        {
+            "label": "E",
+            "startPos": "d4",
+            "endPos": "e4"
+        },
+        {
+            "label": "W",
+            "startPos": "d4",
+            "endPos": "c4"
+        },
+        {
+            "label": "NW",
+            "startPos": "d4",
+            "endPos": "c5"
+        },
+        {
+            "label": "NE",
+            "startPos": "d4",
+            "endPos": "e5"
+        },
+        {
+            "label": "SW",
+            "startPos": "d4",
+            "endPos": "c3"
+        },
+        {
+            "label": "SE",
+            "startPos": "d4",
+            "endPos": "e3"
+        }
+    ]
+}

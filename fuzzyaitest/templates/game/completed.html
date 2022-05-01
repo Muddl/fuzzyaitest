@@ -1,0 +1,47 @@
+{% extends 'layout.html' %}
+
+{%block title%}Completed Games{% endblock %}
+  
+{% block navbar %}
+    <ul class="navbar-nav mr-auto" style = "font-family: 'MedievalSharp'">
+      <li class="nav-item">
+        <a class="nav-link active" href="/">Homepage</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link active" href="/rules">Rules</a>
+		  </li>
+      <li class="nav-item">
+        <a class="nav-link active" href="/completed">Completed</a>
+		  </li>
+    </ul>
+    <ul class="navbar-nav ml-auto" style = "font-family: 'MedievalSharp'">
+      <li class="nav-item">
+        <a class="nav-link" href="/accounts/logout">Logout</a>
+      </li>
+      <li class="nav-item">
+      	<a class="nav-link active"><b>Hello, {{ user.username }}</b></a>
+      </li>
+	</ul>
+{% endblock %}
+
+{% block body %}
+  <div class="container mt-4" style = "font-family: 'MedievalSharp'; color: white">
+    <h2>Your Completed Games</h2> <br>
+    <div class="container" class="container align-items-stretch" style="display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline; color: black">
+      {% for room in completed %}
+        <div class="card border-primary m-1" style="width: 250px">
+          <div class="card-body">
+            <h6 class="card-text">Game Id: {{room.id}}</h6>
+            <h6 class="card-text">Ended: {{room.ended}}</h6>
+            <h6 class="card-text">Against: {{room.opponent.username | default:"AI"}}</h6>
+            <h6 class="card-text">You Played as {{room.side | title}}</h6>
+            <h6 class="card-text">Result: {{room.result | title}}</h6>
+          </div>
+        </div>
+      {% empty %}
+        <p>You have not Completed any Games! </p> <a class="btn btn-secondary mx-2" href="/create" role="button">Create &raquo;</a>
+      {% endfor %}
+    </div> 
+  </div>
+
+{% endblock %}
