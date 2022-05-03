@@ -1,9 +1,0 @@
-django
-channels
-channels-redis
-wheel
-pandas
-numpy
-gunicorn
-dj-database-url
-whitenoise

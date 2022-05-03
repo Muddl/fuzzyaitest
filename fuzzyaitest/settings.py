@@ -11,8 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
-import os
-import dj_database_url
+import os, dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,7 +26,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', default='foo')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = int(os.environ.get('DEBUG', default=0))
 
-ALLOWED_HOSTS = ['pure-temple-65561.herokuapp.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['pure-temple-65561.herokuapp.com', 'localhost', '0.0.0.0']
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
@@ -56,6 +55,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = ["https://pure-temple-65561.herokuapp.com"]
+
 ROOT_URLCONF = 'fuzzyaitest.urls'
 
 TEMPLATES = [
@@ -80,7 +83,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("redis", 6379)],
+            "hosts": [os.environ.get("REDIS_URL")],
         },
     },
 }
@@ -158,11 +161,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-# STATIC_URL = '/static/'
+STATIC_URL = '/static/'
 
-# STATICFILES_DIRS = [
-#     BASE_DIR / 'fuzzyaitest' / 'static',
-# ]
+STATICFILES_DIRS = [
+    BASE_DIR / 'fuzzyaitest' / 'static',
+]
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

@@ -11,8 +11,9 @@ psycopg2-binary = "*"
 wheel = "*"
 pandas = "*"
 numpy = "*"
-gunicorn = "*"
-dj-database-url= "*"
+daphne = "*"
+dj-database-url = "*"
+whitenoise = "*"
 
 [dev-packages]
 
