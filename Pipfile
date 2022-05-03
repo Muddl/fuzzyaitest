@@ -11,6 +11,8 @@ psycopg2-binary = "*"
 wheel = "*"
 pandas = "*"
 numpy = "*"
+gunicorn = "*"
+dj-database-url= "*"
 
 [dev-packages]
 
