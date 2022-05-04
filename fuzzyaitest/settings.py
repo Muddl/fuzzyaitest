@@ -55,8 +55,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = ["www.fuzzychess.com"]
 
 ROOT_URLCONF = 'fuzzyaitest.urls'
