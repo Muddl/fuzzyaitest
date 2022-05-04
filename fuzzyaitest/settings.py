@@ -26,7 +26,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', default='foo')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = int(os.environ.get('DEBUG', default=0))
 
-ALLOWED_HOSTS = ['fuzzychess.com', '0.0.0.0']
+ALLOWED_HOSTS = ['www.fuzzychess.com', '0.0.0.0']
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
@@ -57,7 +57,7 @@ MIDDLEWARE = [
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
-CSRF_TRUSTED_ORIGINS = ["http://www.fuzzychess.com"]
+CSRF_TRUSTED_ORIGINS = ["www.fuzzychess.com"]
 
 ROOT_URLCONF = 'fuzzyaitest.urls'
 
