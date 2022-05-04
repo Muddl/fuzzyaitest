@@ -57,7 +57,7 @@ MIDDLEWARE = [
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
-CSRF_TRUSTED_ORIGINS = ["https://www.fuzzychess.com"]
+CSRF_TRUSTED_ORIGINS = ["http://www.fuzzychess.com"]
 
 ROOT_URLCONF = 'fuzzyaitest.urls'
 
