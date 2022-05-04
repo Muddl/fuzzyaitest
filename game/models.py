@@ -27,3 +27,20 @@ class Game(models.Model):
     readytoblitz = ArrayField(models.CharField(max_length=2, blank=True), size=2, default=[])
     white_captured = ArrayField(models.CharField(max_length=1, blank=True), size=10, default=[])
     black_captured = ArrayField(models.CharField(max_length=1, blank=True), size=10, default=[])
+    
+class Message(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    lobby = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='messages')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
+    content = models.TextField()
+    
+    class Meta:
+        ordering = ('created_at',)
+        
+class Action(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='actions')
+    content = models.TextField()
+    
+    class Meta:
+        ordering = ('created_at',)
