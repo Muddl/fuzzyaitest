@@ -1,8 +1,9 @@
 from threading import local
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
+from django.contrib.auth.models import User
 
-from .models import Game
+from .models import Game, Message, Action
 from .engine import Boardstate
 from .testAI import produceAction
 
@@ -57,7 +58,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 "corplist": data[4],
                 "white_captured": data[5],
                 "black_captured": data[6],
-                "readyToBlitz": data[7]
+                "readyToBlitz": data[7],
+                "action_history": data[8]
             })
             print(f"Sending JOIN for AI Game")
         else:
@@ -73,7 +75,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 "black_captured": data[6],
                 "readyToBlitz": data[7],
                 "side": data[8],
-                "local_opp_online": data[9]
+                "local_opp_online": data[9],
+                "action_history": data[10]
             })
             print(f"Sending JOIN for Multiplayer Game for {data[8]} side")
     
@@ -83,6 +86,12 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         game = Game.objects.all().filter(id=game_id)[0]
         if not game:
             return False
+        
+        action_history = []
+        action_list = list(Action.objects.all().filter(game=game))
+        print(type(action_list))
+        for action in action_list:
+            action_history.append(action.content)
         
         user = self.scope["user"]
         side = 'white'
@@ -96,14 +105,14 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 local_opp_online = True
             print(f"Game_Id:{game_id}\t-\tSetting Opponent_Online In DB")
             game.save()
-            return [False, game.boardstate, game.level, game.whitemove, game.corplist, game.white_captured, game.black_captured, game.readytoblitz, side, local_opp_online]
+            return [False, game.boardstate, game.level, game.whitemove, game.corplist, game.white_captured, game.black_captured, game.readytoblitz, side, local_opp_online, action_history]
             
         elif game.opponent == None:
             if game.owner == user:
                 game.owner_online = True
                 print(f"Game_Id:{game_id}\t-\tSetting Owner_Online In DB")
                 game.save()
-                return [True, game.boardstate, game.level, game.whitemove, game.corplist, game.white_captured, game.black_captured, game.readytoblitz, side, local_opp_online]
+                return [True, game.boardstate, game.level, game.whitemove, game.corplist, game.white_captured, game.black_captured, game.readytoblitz, action_history]
         
         elif game.owner == user:
             game.owner_online = True
@@ -111,7 +120,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 local_opp_online = True
             print(f"Game_Id:{game_id}\t-\tSetting Owner_Online In DB")
             game.save()
-            return [False, game.boardstate, game.level, game.whitemove, game.corplist, game.white_captured, game.black_captured, game.readytoblitz, side, local_opp_online]
+            return [False, game.boardstate, game.level, game.whitemove, game.corplist, game.white_captured, game.black_captured, game.readytoblitz, side, local_opp_online, action_history]
         
         else:
             return False
@@ -141,6 +150,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             elif actionType == "RESIGN":
                 await self.resign()
                 await self.game_over(content["result"])
+            elif actionType == "CHAT_MESSAGE":
+                await self.chat_message(content)
         except:
             pass
     
@@ -182,7 +193,9 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         
         board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList, readyToBlitz=readyToBlitz, white_captured=white_captured, black_captured=black_captured)
         
-        isValidAction, new_boardstate, new_corpList, new_whiteMove, readyToBlitz = board.processAction(payload)
+        isValidAction, new_boardstate, new_corpList, new_whiteMove, readyToBlitz, actionToBeLogged = board.processAction(payload)
+        
+        action_history = await self.log_action(actionToBeLogged)
         
         if isValidAction:
             await self.channel_layer.group_send(
@@ -196,6 +209,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                     "new_whiteMove": new_whiteMove,
                     "new_corpList": new_corpList,
                     "readyToBlitz": readyToBlitz,
+                    "action_history": action_history,
                     'sender_channel_name': self.channel_name
                 }
             )
@@ -212,8 +226,8 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             "new_boardstate": event["new_boardstate"],
             "whiteMove": event["new_whiteMove"],
             "corpList": event["new_corpList"],
-            "readyToBlitz": event["readyToBlitz"]
-            # "pgn": event["pgn"],
+            "readyToBlitz": event["readyToBlitz"],
+            "action_history": event["action_history"]
         })
         print(f"{event['sender_channel_name']}\t-\tSending New-Move")
         
@@ -222,38 +236,64 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
     
     # Helper function called when a new-move command is recieved, broadcasts move.new event to group, handled in move_new
     async def attack_attempt(self, payload):
-        boardstate, whiteMove, corpList, readyToBlitz, white_captured, black_captured = await self.get_boardstate()
-        
-        board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList, readyToBlitz=readyToBlitz, white_captured=white_captured, black_captured=black_captured)
-        
-        isValidAction, isSuccessfulAttack, new_boardstate, roll_val, corpList, whiteMove, isBlitz, readyToBlitz, isEndGame, kingDead, white_captured, black_captured = board.processAction(payload)
-        
-        if isValidAction:
-            if isSuccessfulAttack:
-                if isEndGame:
-                    print(f"{self.channel_name}\t-\tValidated Attack-Attempt as Successful [END_OF_GAME]")
-                    await self.channel_layer.group_send(
-                        str(self.game_id),
-                        {
-                            "type": "attempt.attack",
-                            "actionType": "ATTACK_ATTEMPT",
-                            "isSuccessfulAttack": isSuccessfulAttack,
-                            "new_boardstate": new_boardstate,
-                            "roll_val": roll_val,
-                            "readyToBlitz": readyToBlitz,
-                            "corpList": corpList,
-                            "whiteMove": whiteMove,
-                            'isBlitz': isBlitz,
-                            'kingDead': kingDead,
-                            'white_captured': white_captured,
-                            'black_captured': black_captured,
-                            "activePiece": payload["activePiece"],
-                            "targetPiece": payload["targetPiece"],
-                            'sender_channel_name': self.channel_name
-                        }
-                    )
+        try:
+            boardstate, whiteMove, corpList, readyToBlitz, white_captured, black_captured = await self.get_boardstate()
+            
+            board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList, readyToBlitz=readyToBlitz, white_captured=white_captured, black_captured=black_captured)
+            
+            isValidAction, isSuccessfulAttack, new_boardstate, roll_val, corpList, whiteMove, isBlitz, readyToBlitz, isEndGame, kingDead, white_captured, black_captured, actionToBeLogged = board.processAction(payload)
+            
+            action_history = await self.log_action(actionToBeLogged)
+            
+            if isValidAction:
+                if isSuccessfulAttack:
+                    if isEndGame:
+                        print(f"{self.channel_name}\t-\tValidated Attack-Attempt as Successful [END_OF_GAME]")
+                        await self.channel_layer.group_send(
+                            str(self.game_id),
+                            {
+                                "type": "attempt.attack",
+                                "actionType": "ATTACK_ATTEMPT",
+                                "isSuccessfulAttack": isSuccessfulAttack,
+                                "new_boardstate": new_boardstate,
+                                "roll_val": roll_val,
+                                "readyToBlitz": readyToBlitz,
+                                "corpList": corpList,
+                                "whiteMove": whiteMove,
+                                'isBlitz': isBlitz,
+                                'kingDead': kingDead,
+                                'white_captured': white_captured,
+                                'black_captured': black_captured,
+                                'action_history': action_history,
+                                "activePiece": payload["activePiece"],
+                                "targetPiece": payload["targetPiece"],
+                                'sender_channel_name': self.channel_name
+                            }
+                        )
+                    else:
+                        print(f"{self.channel_name}\t-\tValidated Attack-Attempt as Successful")
+                        await self.channel_layer.group_send(
+                            str(self.game_id),
+                            {
+                                "type": "attempt.attack",
+                                "actionType": "ATTACK_ATTEMPT",
+                                "isSuccessfulAttack": isSuccessfulAttack,
+                                "new_boardstate": new_boardstate,
+                                "roll_val": roll_val,
+                                "readyToBlitz": readyToBlitz,
+                                "corpList": corpList,
+                                "whiteMove": whiteMove,
+                                'isBlitz': isBlitz,
+                                'white_captured': white_captured,
+                                'black_captured': black_captured,
+                                'action_history': action_history,
+                                "activePiece": payload["activePiece"],
+                                "targetPiece": payload["targetPiece"],
+                                'sender_channel_name': self.channel_name
+                            }
+                        )
                 else:
-                    print(f"{self.channel_name}\t-\tValidated Attack-Attempt as Successful")
+                    print(f"{self.channel_name}\t-\tValidated Attack-Attempt as Failed")
                     await self.channel_layer.group_send(
                         str(self.game_id),
                         {
@@ -266,34 +306,17 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                             "corpList": corpList,
                             "whiteMove": whiteMove,
                             'isBlitz': isBlitz,
-                            'white_captured': white_captured,
-                            'black_captured': black_captured,
+                            'action_history': action_history,
                             "activePiece": payload["activePiece"],
                             "targetPiece": payload["targetPiece"],
                             'sender_channel_name': self.channel_name
                         }
                     )
             else:
-                print(f"{self.channel_name}\t-\tValidated Attack-Attempt as Failed")
-                await self.channel_layer.group_send(
-                    str(self.game_id),
-                    {
-                        "type": "attempt.attack",
-                        "actionType": "ATTACK_ATTEMPT",
-                        "isSuccessfulAttack": isSuccessfulAttack,
-                        "new_boardstate": new_boardstate,
-                        "roll_val": roll_val,
-                        "readyToBlitz": readyToBlitz,
-                        "corpList": corpList,
-                        "whiteMove": whiteMove,
-                        'isBlitz': isBlitz,
-                        "activePiece": payload["activePiece"],
-                        "targetPiece": payload["targetPiece"],
-                        'sender_channel_name': self.channel_name
-                    }
-                )
-        else:
-            print(f"{self.channel_name}\t-\tFailed to validate Attack-Attempt")
+                print(f"{self.channel_name}\t-\tFailed to validate Attack-Attempt")
+        except BaseException:
+            tb = traceback.format_exc()
+            print(tb)
     
     # Pair handler of new_move(), recieves the event broadcast request & sends relevent message
     async def attempt_attack(self, event):
@@ -314,9 +337,9 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                     'black_captured': event["black_captured"],
                     "activePiece": event["activePiece"],
                     "targetPiece": event["targetPiece"],
-                    # "pgn": event["pgn"],
+                    'action_history': event["action_history"]
                 })
-                await self.updateEOG(event["new_boardstate"], event["corpList"], event["whiteMove"], event["readyToBlitz"], event['kingDead'], event["white_captured"], event["black_captured"]) #,event["pgn"])
+                await self.updateEOG(event["new_boardstate"], event["corpList"], event["whiteMove"], event["readyToBlitz"], event['kingDead'], event["white_captured"], event["black_captured"])
             else:
                 print(f"{event['sender_channel_name']}\t-\tSending Attempt-Attack as Successful")
                 await self.send_json({
@@ -332,9 +355,9 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                     'black_captured': event["black_captured"],
                     "activePiece": event["activePiece"],
                     "targetPiece": event["targetPiece"],
-                    # "pgn": event["pgn"],
+                    'action_history': event["action_history"]
                 })
-                await self.updateSuccessAttack(event["new_boardstate"], event["corpList"], event["whiteMove"], event["readyToBlitz"], event["white_captured"], event["black_captured"]) #,event["pgn"])
+                await self.updateSuccessAttack(event["new_boardstate"], event["corpList"], event["whiteMove"], event["readyToBlitz"], event["white_captured"], event["black_captured"])
         else:
             print(f"{event['sender_channel_name']}\t-\tSending Attempt-Attack as Failed")
             await self.send_json({
@@ -347,12 +370,12 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 'isBlitz': event["isBlitz"],
                 "activePiece": event["activePiece"],
                 "targetPiece": event["targetPiece"],
-                # "pgn": event["pgn"],
+                'action_history': event["action_history"]
             })
-            await self.update(event["new_boardstate"], event["corpList"], event["whiteMove"], event["readyToBlitz"]) #,event["pgn"])
+            await self.update(event["new_boardstate"], event["corpList"], event["whiteMove"], event["readyToBlitz"])
         
     async def highlight(self, payload):
-        boardstate, whiteMove, corpList, readyToBlitz, white_captured, black_captured  = await self.get_boardstate()
+        boardstate, whiteMove, corpList, readyToBlitz, white_captured, black_captured = await self.get_boardstate()
         
         board = Boardstate(boardstate=boardstate, whiteMove=whiteMove, corpList=corpList, readyToBlitz=readyToBlitz, white_captured=white_captured, black_captured=black_captured)
         
@@ -524,7 +547,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 black_actions = []
                 black_moves = []
                 while whiteMove == False and game_ended_flag == False:
-                    currentBoardstate, currentWhiteMove, currentCorpList, readyToBlitz, white_captured, black_captured  = await self.get_boardstate()
+                    currentBoardstate, currentWhiteMove, currentCorpList, readyToBlitz, white_captured, black_captured = await self.get_boardstate()
                     
                     AIAction = produceAction(currentBoardstate, currentWhiteMove, currentCorpList, readyToBlitz, white_captured, black_captured)
                     
@@ -652,6 +675,60 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             await self.send_json({
                 "actionType":"OPPONENT_RESIGNED",
             })
+    
+    async def chat_message(self, payload):
+        try:
+            print(payload)
+            message = payload['message']
+            username = payload['username']
+            game_id = payload['game_id']
+            
+            await self.save_message(username, game_id, message)
+        
+            # Send message to room group
+            await self.channel_layer.group_send(
+                str(self.game_id),
+                {
+                    'type': 'message_chat',
+                    'message': message,
+                    'username': username
+                }
+            )
+        except BaseException:
+            tb = traceback.format_exc()
+            print(tb)
+        
+    # Receive message from room group
+    async def message_chat(self, event):
+        message = event['message']
+        username = event['username']
+
+        # Send message to WebSocket
+        await self.send_json({
+            'actionType': "CHAT_MESSAGE",
+            'message': message,
+            'username': username
+        })
+        
+    # Add a new method to the class
+    @database_sync_to_async
+    def save_message(self, username, game_id, message):
+        user = User.objects.get(username=username)
+        game = Game.objects.get(pk=game_id)
+
+        Message.objects.create(user=user, lobby=game, content=message)
+    
+    @database_sync_to_async
+    def log_action(self, actionToBeLogged):
+        game = Game.objects.get(pk=self.game_id)
+        Action.objects.create(game=game, content=actionToBeLogged)
+        
+        action_history = []
+        action_list = list(Action.objects.all().filter(game=game))
+        for action in action_list:
+            action_history.append(action.content)
+        
+        return action_history
     
     # Called after every move_new & attempt_action JSON is sent to persist gamestate to DB
     @database_sync_to_async
