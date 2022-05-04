@@ -78,20 +78,22 @@
             <!-- Right Side Column -->
             <div class="col-3 px-0">
                 <!-- Move Log -->
-                <div class="card h-50">
+                <div id='moves' class="card h-50">
                     <div class="card-header">Move Log</div>
-                    <div id="move_log" class="card-body mh-100 py-2 overflow-auto"></div>
+                    <div id="move_log" class="card-body mh-100 py-2 overflow-auto" style="bottom: 1rem;">
+                        {% for a in actions %}<b>{{ a.id }}</b>: {{ m.content }}<br>{% endfor %}
+                    </div>
                 </div>
                 
                 <!-- Chat Room -->
-                <div id="chat" class="card mh-50 h-50">
+                <div id="chat" class="card mh-50 h-50 position-absolute">
                     <div class="card-header">Lobby Chat</div>
-                    <div class="card-body">
-                        <div id="chat-messages" class="align-items-end overflow-auto"></div>
-                        <div id="chat-compose" class="position-absolute" style="bottom: 1rem;">
-                            <input type="text" placeholder="Type message here...">
-                            <button id="chat-submit">Submit</button>
-                        </div>
+                    <div id="chat-messages" class="card-body overflow-auto">
+                        {% for m in chat_messages %}<b>{{ m.user.username }}</b>: {{ m.content }}<br>{% endfor %}
+                    </div>
+                    <div class="card-footer">
+                        <input id="chat-input" type="text" placeholder="Type message here...">
+                        <button id="chat-submit">Submit</button>
                     </div>
                 </div>
             </div>
@@ -224,4 +226,8 @@
         </div>
 
     </div>
+
+    {{ game_id|json_script:"json-lobbyid" }}
+    {{ request.user.username|json_script:"json-username" }}
+
 {% endblock body %}

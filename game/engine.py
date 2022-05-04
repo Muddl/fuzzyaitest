@@ -302,7 +302,6 @@ class Boardstate:
         self.readyToBlitz = readyToBlitz  # Stores the traits of knights ready to blitz
         self.white_captured = white_captured
         self.black_captured = black_captured
-        self.gameHistory = []  # Keeps a history of the actions in a game.
         
     # Function that moves the pieces, adds it to the game history, and swaps players - IMPORTANT
     def processAction(self, parsedAction):
@@ -352,14 +351,14 @@ class Boardstate:
                                 self.corpLists[enemy][corp]["command_authority_remaining"] = 1
                             self.whiteMove = not self.whiteMove  # Swaps players.
                             self.readyToBlitz = []
-                            
-                        self.gameHistory.append(parsedAction)  # Adds the action to the game history
                         
-                        return True, self.board, self.corpLists, self.whiteMove, self.readyToBlitz
+                        actionToBeLogged = activeColor + activeRank + ' ' + activePos + ' -> ' + targetPos
+                        
+                        return True, self.board, self.corpLists, self.whiteMove, self.readyToBlitz, actionToBeLogged
                     else:
-                        return False, None, None, None, None
+                        return False, None, None, None, None, None
                 else:
-                    return False, None, None, None, None
+                    return False, None, None, None, None, None
             except BaseException:
                 tb = traceback.format_exc()
                 print(tb)
@@ -370,6 +369,7 @@ class Boardstate:
             activeRank = parsedAction["activePiece"]["rank"]
             activeCorp = parsedAction["activePiece"]["corp"]
             targetPos = parsedAction["targetPiece"]["pos"]
+            targetColor = parsedAction["targetPiece"]["color"]
             targetRank = parsedAction["targetPiece"]["rank"]
             targetCorp = parsedAction["targetPiece"]["corp"]
             friendly = 'w' if self.whiteMove else 'b'
@@ -456,7 +456,16 @@ class Boardstate:
                                 self.whiteMove = not self.whiteMove  # Swaps players.
                                 self.readyToBlitz = []
                             
-                            self.gameHistory.append(parsedAction)  # Adds the action to the game history
+                            if outcome:
+                                if isBlitz:
+                                    actionToBeLogged = f"{activeColor + activeRank} {activePos} -> {targetPos} --- Attack on {targetColor + targetRank} succeeded with blitz and a roll of {roll_val}!"
+                                else:
+                                    actionToBeLogged = f"{activeColor + activeRank} {activePos} -> {targetPos} --- Attack on {targetColor + targetRank} succeeded with a roll of {roll_val}!"
+                            else:
+                                if isBlitz:
+                                    actionToBeLogged = f"{activeColor + activeRank} {activePos} -> {targetPos} --- Attack on {targetColor + targetRank} failed with blitz and a roll of {roll_val}"
+                                else:
+                                    actionToBeLogged = f"{activeColor + activeRank} {activePos} -> {targetPos} --- Attack on {targetColor + targetRank} failed with a roll of {roll_val}"
                             
                             # Endgame check
                             isEndGame = False
@@ -464,11 +473,11 @@ class Boardstate:
                                 self.kingDead = activeColor # Set to proper color
                                 isEndGame = True
                             
-                            return True, outcome, self.board, roll_val, self.corpLists, self.whiteMove, isBlitz, self.readyToBlitz, isEndGame, self.kingDead, self.white_captured, self.black_captured
+                            return True, outcome, self.board, roll_val, self.corpLists, self.whiteMove, isBlitz, self.readyToBlitz, isEndGame, self.kingDead, self.white_captured, self.black_captured, actionToBeLogged
                     else:
-                        return False, False, None, None, None, False, False, None, False, None, None, None
+                        return False, False, None, None, None, False, False, None, False, None, None, None, None
                 else:
-                    return False, False, None, None, None, False, False, None, False, None, None, None
+                    return False, False, None, None, None, False, False, None, False, None, None, None, None
             except BaseException:
                 tb = traceback.format_exc()
                 print(tb)

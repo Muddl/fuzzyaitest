@@ -1,7 +1,8 @@
 import { removeHighlightedSquares, greySquare, redSquare, greenSquare, sortAlphabet } from './helpers.js';
 
 // Global Variables
-var game_id = window.location.pathname.substring(6,window.location.pathname.length); // Check the subtring params here
+var game_id = JSON.parse(document.getElementById('json-lobbyid').textContent);
+var userName = JSON.parse(document.getElementById('json-username').textContent);
 var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
 var ws_path = ws_scheme + '://' + window.location.host + "/game/" + game_id;
 console.log("Attempting connection on " + ws_path);
@@ -30,6 +31,9 @@ var $resModalTitle = $('#res-modal-title');
 var $resModalBody = $('#res-modal-body');
 var $kingDelegateMenuContents = $("#kingDelegateMenuContents");
 var $targetCorpMenuContents = $("#targetCorpMenuContents");
+var $chatMessages = $("#chat-messages");
+var $chatInput = $("#chat-input");
+var $chatSubmit = $("#chat-submit");
 
 // Local Gamestate Var Holders
 var local_orientation = null;
@@ -46,6 +50,13 @@ var local_ai_move_list = null;
 var local_readyToBlitz = null;
 var local_delegation_ready = null;
 var board = Chessboard('my_board');
+
+const renderActionHistory = (action_history) => {
+    $move_log.empty()
+    action_history.forEach((action, index) => {
+        $move_log.append(`<b>Action #${index+1}</b>: ${action}<br>`);
+    });
+};
 
 const updateAuthRemaining = () => {
     // First iterate through local_corplist and create a sublist of remaining command authorities
@@ -456,7 +467,6 @@ const rollAnimStart = (data) => {
 const successfullAttack = (rollVal, blitz, white_captured, black_captured, new_boardstate, activePiece, targetPiece) => {
     console.log("successful attack");
     let dice = document.querySelectorAll("img.dice");
-    var moveToBeLogged = document.createElement('p');
 
     dice.forEach((die) => {
         die.classList.remove("shake");
@@ -479,25 +489,21 @@ const successfullAttack = (rollVal, blitz, white_captured, black_captured, new_b
 
     if (blitz) {
         $attack_result.text("Successful Attack + Blitz!").css("color", "green").css("visibility","visible");
-        moveToBeLogged.textContent = `${activePiece.color + activePiece.rank} ${activePiece.pos} -> ${targetPiece.pos} --- Attack on ${targetPiece.color + targetPiece.rank} succeeded with blitz and a roll of ${dieValue}`;
         renderPieceListAnim(white_captured, black_captured);
     } else {
         $attack_result.text("Successful Attack!").css("color", "green").css("visibility","visible");
-        moveToBeLogged.textContent = `${activePiece.color + activePiece.rank} ${activePiece.pos} -> ${targetPiece.pos} --- Attack on ${targetPiece.color + targetPiece.rank} succeeded with a roll of ${dieValue}`;
         renderPieceListAnim(white_captured, black_captured);
     };
 
     board.position(new_boardstate);
 
     updateAuthRemaining(local_corplist);
-    $move_log.append(moveToBeLogged);
     removeCombatPieces();
 };
 
 const failedAttack = (rollVal, blitz, new_boardstate, activePiece, targetPiece) => {
     console.log("failed attack");
     let dice = document.querySelectorAll("img.dice");
-    var moveToBeLogged = document.createElement('p');
 
     dice.forEach((die) => {
         die.classList.remove("shake");
@@ -520,16 +526,13 @@ const failedAttack = (rollVal, blitz, new_boardstate, activePiece, targetPiece) 
 
     if (blitz) {
         $attack_result.text("Failed Attack + Blitz!").css("color", "red").css("visibility","visible");
-        moveToBeLogged.textContent = `${activePiece.color + activePiece.rank} ${activePiece.pos} -> ${targetPiece.pos} --- Attack on ${targetPiece.color + targetPiece.rank} failed with blitz and a roll of ${dieValue}`;
     } else {
         $attack_result.text("Failed Attack!").css("color", "red").css("visibility","visible");
-        moveToBeLogged.textContent = `${activePiece.color + activePiece.rank} ${activePiece.pos} -> ${targetPiece.pos} --- Attack on ${targetPiece.color + targetPiece.rank} failed with a roll of ${dieValue}`;
     };
 
     board.position(new_boardstate);
 
     updateAuthRemaining(local_corplist);
-    $move_log.append(moveToBeLogged);
     removeCombatPieces();
 };
 
@@ -553,6 +556,8 @@ const resolveAttack = (data) => {
     } else {
         setTimeout(failedAttack(data.roll_val, data.isBlitz, data.new_boardstate, data.activePiece, data.targetPiece), 3000);
     };
+
+    renderActionHistory(data.action_history);
 
     if ("kingDead" in data) {
         var status = 'Game over, ' + (local_whiteMove ? "black" : "white") + ' is in checkmate.';
@@ -649,6 +654,8 @@ socket.onmessage = (message) => {
 
             updateAuthRemaining(local_corplist);
 
+            renderActionHistory(data.action_history);
+
             if (!local_whiteMove) {
                 startAITurn();
             }
@@ -709,6 +716,8 @@ socket.onmessage = (message) => {
 
             updateAuthRemaining(local_corplist);
 
+            renderActionHistory(data.action_history);
+
             if(local_opp_online != true) {
                 $gameModalTitle.html("Please Wait...")
                 $gameModalBody.html("Please wait for your opponent to connect to this game")
@@ -745,9 +754,7 @@ socket.onmessage = (message) => {
         updateAuthRemaining(local_corplist);
 
         // Append a new entry to the movelog
-        var textElement = document.createElement('p');
-        textElement.textContent = data.activePiece.color + data.activePiece.rank + ' ' + data.activePiece.pos + ' -> ' + data.targetPiece.pos;
-        $move_log.append(textElement);
+        renderActionHistory(data.action_history);
 
         if (!local_whiteMove && local_isAIGame) {
             startAITurn();
@@ -808,10 +815,7 @@ socket.onmessage = (message) => {
                 } else if (local_ai_action_list[index].actionType == "MOVEMENT") {
                     board.move(local_ai_move_list[index]);
                     // Append a new entry to the movelog
-                    var textElement = document.createElement('p');
-                    textElement.textContent = action.activePiece.color + action.activePiece.rank + ' ' + action.activePiece.pos + ' -> ' + action.targetPiece.pos;
-                    $move_log.append(textElement);
-                    $move_log.css("display",'inline');
+                    renderActionHistory(local_ai_action_list[index].action_history);
                 }
             } else if (action.actionType == "ATTACK_ATTEMPT") {
                 resolveAttack(action);
@@ -830,7 +834,7 @@ socket.onmessage = (message) => {
             backdrop: 'static'
         });
     }
-    // On OPPONENT_RESIGNED
+    // On OPPONENT_RESIGNED actionType
     else if(data.actionType=="OPPONENT_RESIGNED") {
         $gameModalTitle.html("Game over")
         $gameModalBody.html("Your opponent has resigned from the game. You win!")
@@ -838,6 +842,10 @@ socket.onmessage = (message) => {
             keyboard: false,
             backdrop: 'static'
         });
+    }
+    // On CHAT_MESSAGE actionType
+    else if(data.actionType=="CHAT_MESSAGE") {
+        $chatMessages.append(`<b>${data.username}</b>: ${data.message}<br>`);
     }
 };
 
@@ -966,6 +974,40 @@ $(document).on('click','#yesRes', () => {
     });
 });
 
-$('#move_log').on('DOMSubtreeModified', () => {
-    $('#move_log').scrollTop($('#move_log').prop("scrollHeight"));
-})
+// Move log autoscroll down + absolute pos
+$move_log.ready(() => {
+    $move_log.scrollTop($move_log.prop("scrollHeight"));
+});
+$move_log.on('DOMSubtreeModified', () => {
+    $move_log.scrollTop($move_log.prop("scrollHeight"));
+});
+
+// Chat autoscroll down + absolute pos
+$chatMessages.ready(() => {
+    $chatMessages.scrollTop($chatMessages.prop("scrollHeight"));
+});
+$chatMessages.on('DOMSubtreeModified', () => {
+    $chatMessages.scrollTop($chatMessages.prop("scrollHeight"));
+});
+
+// Enter in chat is a submit
+$chatInput.keyup((event) => {
+    if (event.keyCode == 13) {
+        $chatSubmit.click();
+    };
+});
+
+$chatSubmit.on('click',() => {
+    const message = $chatInput.val();
+    console.log()
+
+    socket.send(JSON.stringify({
+        'actionType': "CHAT_MESSAGE",
+        'isAIGame': local_isAIGame,
+        'message': message,
+        'username': userName,
+        'game_id': game_id
+    }));
+
+    $chatInput.val('');
+});
