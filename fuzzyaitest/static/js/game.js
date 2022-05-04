@@ -748,7 +748,6 @@ socket.onmessage = (message) => {
         var textElement = document.createElement('p');
         textElement.textContent = data.activePiece.color + data.activePiece.rank + ' ' + data.activePiece.pos + ' -> ' + data.targetPiece.pos;
         $move_log.append(textElement);
-        $move_log.css("display",'inline');
 
         if (!local_whiteMove && local_isAIGame) {
             startAITurn();
@@ -966,3 +965,7 @@ $(document).on('click','#yesRes', () => {
         backdrop: 'static'
     });
 });
+
+$('#move_log').on('DOMSubtreeModified', () => {
+    $('#move_log').scrollTop($('#move_log').prop("scrollHeight"));
+})
