@@ -26,7 +26,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', default='foo')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = int(os.environ.get('DEBUG', default=0))
 
-ALLOWED_HOSTS = ['www.fuzzychess.com', '0.0.0.0']
+ALLOWED_HOSTS = ['fuzzychess.com', '0.0.0.0']
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
