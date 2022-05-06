@@ -543,6 +543,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             readyToBlitz = []
             white_captured = []
             black_captured = []
+            action_history = []
             if (not whiteMove and payload["isAIGame"]):
                 black_actions = []
                 black_moves = []
@@ -555,12 +556,14 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                     
                     match AIAction["actionType"]:
                         case "MOVEMENT":
-                            isValidAction, new_boardstate, corpList, whiteMove, readyToBlitz = board.processAction(AIAction)
+                            isValidAction, new_boardstate, corpList, whiteMove, readyToBlitz, actionToBeLogged = board.processAction(AIAction)
                             
                             sourcePos = AIAction["activePiece"]["pos"]
                             targetPos = AIAction["targetPiece"]["pos"]
                             
                             if isValidAction:
+                                action_history = await self.log_action(actionToBeLogged)
+                                AIAction["action_history"] = action_history
                                 black_actions.append(AIAction)
                                 black_moves.append(sourcePos + "-" + targetPos)
                                 await self.update(new_boardstate, corpList, whiteMove, readyToBlitz)
@@ -569,7 +572,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                                 print(f"{self.channel_name}\t-\tInvalid AI Movement")
                                 
                         case "ATTACK_ATTEMPT":
-                            isValidAction, isSuccessfulAttack, new_boardstate, roll_val, corpList, whiteMove, isBlitz, readyToBlitz, isEndGame, kingDead, white_captured, black_captured = board.processAction(AIAction)
+                            isValidAction, isSuccessfulAttack, new_boardstate, roll_val, corpList, whiteMove, isBlitz, readyToBlitz, isEndGame, kingDead, white_captured, black_captured, actionToBeLogged = board.processAction(AIAction)
                             
                             sourcePos = AIAction["activePiece"]["pos"]
                             targetPos = AIAction["targetPiece"]["pos"]
@@ -588,15 +591,21 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                                 if isSuccessfulAttack:
                                     if isEndGame:
                                         game_ended_flag = True
+                                        action_history = await self.log_action(actionToBeLogged)
+                                        AIAction["action_history"] = action_history
                                         AIAction["kingDead"] = kingDead
                                         black_actions.append(AIAction)
                                         black_moves.append(sourcePos + "-" + targetPos)
                                         await self.updateEOG(new_boardstate, corpList, whiteMove, readyToBlitz, kingDead, white_captured, black_captured)
                                     else:
+                                        action_history = await self.log_action(actionToBeLogged)
+                                        AIAction["action_history"] = action_history
                                         black_actions.append(AIAction)
                                         black_moves.append(sourcePos + "-" + targetPos)
                                         await self.updateSuccessAttack(new_boardstate, corpList, whiteMove, readyToBlitz, white_captured, black_captured)
                                 else:
+                                    action_history = await self.log_action(actionToBeLogged)
+                                    AIAction["action_history"] = action_history
                                     black_actions.append(AIAction)
                                     black_moves.append("")
                                     await self.update(new_boardstate, corpList, whiteMove, readyToBlitz)
@@ -619,6 +628,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                             "readyToBlitz": readyToBlitz,
                             'white_captured': white_captured,
                             'black_captured': black_captured,
+                            "action_history": action_history,
                             'sender_channel_name': self.channel_name
                         }
                     )
@@ -637,6 +647,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                             "readyToBlitz": readyToBlitz,
                             'white_captured': white_captured,
                             'black_captured': black_captured,
+                            "action_history": action_history,
                             'sender_channel_name': self.channel_name
                         }
                     )
