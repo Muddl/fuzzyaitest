@@ -567,23 +567,17 @@ class Boardstate:
         
         if (selected.getTraits() == self.corpLists[friendly][selectedCorp]["leader"]): # Confirm piece is a bishop & the leader of its corp
             if self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Attacks/Captures/Full Movement
-                max_bishop_range = [
-                    f"{selectedPos[0]}{chr(ord(selectedPos[1])+1)}",  f"{selectedPos[0]}{chr(ord(selectedPos[1])+2)}", # North Pos
-                    f"{selectedPos[0]}{chr(ord(selectedPos[1])-1)}",  f"{selectedPos[0]}{chr(ord(selectedPos[1])-2)}", # South Pos
-                    f"{chr(ord(selectedPos[0])+1)}{selectedPos[1]}",  f"{chr(ord(selectedPos[0])+2)}{selectedPos[1]}", # East Pos
-                    f"{chr(ord(selectedPos[0])-1)}{selectedPos[1]}",  f"{chr(ord(selectedPos[0])-2)}{selectedPos[1]}", # West Pos
-                    f"{chr(ord(selectedPos[0])+1)}{chr(ord(selectedPos[1])+1)}",  f"{chr(ord(selectedPos[0])+2)}{chr(ord(selectedPos[1])+2)}", # NE Pos
-                    f"{chr(ord(selectedPos[0])-1)}{chr(ord(selectedPos[1])+1)}",  f"{chr(ord(selectedPos[0])-2)}{chr(ord(selectedPos[1])+2)}", # NW Pos
-                    f"{chr(ord(selectedPos[0])+1)}{chr(ord(selectedPos[1])-1)}",  f"{chr(ord(selectedPos[0])+2)}{chr(ord(selectedPos[1])-2)}", # SE Pos
-                    f"{chr(ord(selectedPos[0])-1)}{chr(ord(selectedPos[1])-1)}",  f"{chr(ord(selectedPos[0])-2)}{chr(ord(selectedPos[1])-2)}", # SW Pos
-                ]
-                cleaned_range = [pos for pos in max_bishop_range if isValidAlgeNotation(pos)]
-                in_range = [pos for pos in cleaned_range if ((pos in base_list) and (str(self.board.get(pos))[0] == enemy))]
-                cleaned_no_attackable_range = [pos for pos in cleaned_range if pos not in in_range]
-                functional_range = [pos for pos in cleaned_no_attackable_range if not self.isLineBlocked(selectedPos, pos)]
-                for pos in functional_range:
-                    if pos not in self.board:
-                        movement.append(pos)
+                first_iter_moves = [pos for pos in base_list if pos not in self.board]
+                movement = movement + first_iter_moves
+                second_iter_moves = []
+                for pos in first_iter_moves:
+                    sublist = getAdjSquares(pos, True)
+                    for pos in sublist:
+                        if pos not in self.board:
+                            second_iter_moves.append(pos)
+                movement = movement + second_iter_moves
+                movement = list(set(movement))
+                
                 for pos in movement:
                     adj_to_move = getAdjSquares(pos, True)
                     enemies_adj_to_pos = [pos for pos in adj_to_move if str(self.board.get(pos))[0] == enemy]
@@ -598,19 +592,6 @@ class Boardstate:
         return (list(set(in_range)), list(set(setup)), list(set(movement)))
     
     def getRookValidMoveset(self, selected):
-        def getRookMoveRange(pos):
-            max_rook_move_range =  [
-                f"{pos[0]}{chr(ord(pos[1])+1)}", f"{pos[0]}{chr(ord(pos[1])+2)}", # North Pos
-                f"{pos[0]}{chr(ord(pos[1])-1)}", f"{pos[0]}{chr(ord(pos[1])-2)}", # South Pos
-                f"{chr(ord(pos[0])+1)}{pos[1]}", f"{chr(ord(pos[0])+2)}{pos[1]}", # East Pos
-                f"{chr(ord(pos[0])-1)}{pos[1]}", f"{chr(ord(pos[0])-2)}{pos[1]}", # West Pos
-                f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])+2)}", # NE Pos
-                f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])+1)}", f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])+2)}", # NW Pos
-                f"{chr(ord(pos[0])+1)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])+2)}{chr(ord(pos[1])-2)}", # SE Pos
-                f"{chr(ord(pos[0])-1)}{chr(ord(pos[1])-1)}", f"{chr(ord(pos[0])-2)}{chr(ord(pos[1])-2)}", # SW Pos
-            ]
-            return [pos for pos in max_rook_move_range if isValidAlgeNotation(pos)]
-
         def getRookAttackRange(pos):
             max_rook_attack_range = [
                 f"{pos[0]}{chr(ord(pos[1])+1)}", f"{pos[0]}{chr(ord(pos[1])+2)}", f"{pos[0]}{chr(ord(pos[1])+3)}", # North Pos
@@ -637,14 +618,25 @@ class Boardstate:
         friendly = 'w' if self.whiteMove else 'b'
         enemy = 'b' if self.whiteMove else 'w'
         
+        base_list = getAdjSquares(selectedPos, True)
         in_range = []
         setup = []
         movement = []
         
         if (selected.getTraits() in self.corpLists[friendly][selectedCorp]["under_command"]) and (self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1):
             in_range = [pos for pos in getRookAttackRange(selectedPos) if str(self.board.get(pos))[0] == enemy]
-            base_move_range = [pos for pos in getRookMoveRange(selectedPos) if pos not in self.board]
-            movement = [pos for pos in base_move_range if not self.isLineBlocked(selectedPos, pos)]
+            
+            first_iter_moves = [pos for pos in base_list if pos not in self.board]
+            movement = movement + first_iter_moves
+            second_iter_moves = []
+            for pos in first_iter_moves:
+                sublist = getAdjSquares(pos, True)
+                for pos in sublist:
+                    if pos not in self.board:
+                        second_iter_moves.append(pos)
+            movement = movement + second_iter_moves
+            movement = list(set(movement))
+            
             for pos in in_range:
                 attackable_from = getRookAttackRange(pos)
                 for pos in attackable_from:
