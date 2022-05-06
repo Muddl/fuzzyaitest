@@ -659,7 +659,23 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             print(tb)
     
     async def ai_turn_res(self, event):
-        await self.send_json({
+        if "kingDead" in event:
+            await self.send_json({
+                "actionType": event['actionType'],
+                "black_actions": event['black_actions'],
+                "black_moves": event["black_moves"],
+                "kingDead": event["kingDead"],
+                "new_boardstate": event["new_boardstate"],
+                "whiteMove": event["whiteMove"],
+                "corpList": event["corpList"],
+                "readyToBlitz": event["readyToBlitz"],
+                'white_captured': event["white_captured"],
+                'black_captured': event["black_captured"],
+                "action_history": event["action_history"],
+            })
+            print(f"{event['sender_channel_name']}\t-\tSending AI_TURN_REQ [END_OF_GAME]")
+        else:
+            await self.send_json({
                 "actionType": event['actionType'],
                 "black_actions": event['black_actions'],
                 "black_moves": event["black_moves"],
@@ -669,8 +685,9 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                 "readyToBlitz": event["readyToBlitz"],
                 'white_captured': event["white_captured"],
                 'black_captured': event["black_captured"],
+                "action_history": event["action_history"],
             })
-        print(f"{event['sender_channel_name']}\t-\tSending AI_TURN_REQ")
+            print(f"{event['sender_channel_name']}\t-\tSending AI_TURN_REQ")
     
     async def resign(self):
         await self.channel_layer.group_send(
