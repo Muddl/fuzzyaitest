@@ -51,6 +51,8 @@ var local_readyToBlitz = null;
 var local_delegation_ready = null;
 var board = Chessboard('my_board');
 
+var midAnimation = false;
+
 const renderActionHistory = (action_history) => {
     $move_log.empty()
     action_history.forEach((action, index) => {
@@ -420,22 +422,44 @@ const onSnapEnd = () => {
 const renderPieceListAnim = (white_captured, black_captured) => {
     let eliminatedPiece = $defending_piece.attr("src");
     let colorOfPiece = (eliminatedPiece.charAt(eliminatedPiece.length - 6) === 'b' ? 'black' : 'white');
-    let PlayerCapturedPieces = (colorOfPiece === local_orientation ? white_captured : black_captured);
-    let OppCapturedPieces = (colorOfPiece === local_orientation ? black_captured : white_captured);
+    let PlayerCapturedPieces = []
+    let OppCapturedPieces = []
 
-    if (colorOfPiece === local_orientation) {
-        OppCapturedPieces.push(eliminatedPiece)
-        for (let count = OppCapturedPieces.length; count < OppCapturedPieces.length + 1; count++) {
-            var imageElement = $('<img />', { src: OppCapturedPieces[count-1], }).css('width', '40px').css('height', '40px');
-            $oppCapturedCon.append(imageElement);
+    if (local_isAIGame) {
+        PlayerCapturedPieces = white_captured;
+        OppCapturedPieces = black_captured;
+
+        if (colorOfPiece === "black") {
+            OppCapturedPieces.push(eliminatedPiece)
+            for (let count = OppCapturedPieces.length; count < OppCapturedPieces.length + 1; count++) {
+                var imageElement = $('<img />', { src: OppCapturedPieces[count-1], }).css('width', '40px').css('height', '40px');
+                $oppCapturedCon.append(imageElement);
+            };
+        } else {
+            PlayerCapturedPieces.push(eliminatedPiece);
+            for (let count = PlayerCapturedPieces.length; count < PlayerCapturedPieces.length + 1; count++) {
+                var imageElement = $('<img />', { src: PlayerCapturedPieces[count-1], }).css('width', '40px').css('height', '40px');
+                $playerCapturedCon.append(imageElement);
+            };
         };
     } else {
-        PlayerCapturedPieces.push(eliminatedPiece);
-        for (let count = PlayerCapturedPieces.length; count < PlayerCapturedPieces.length + 1; count++) {
-            var imageElement = $('<img />', { src: PlayerCapturedPieces[count-1], }).css('width', '40px').css('height', '40px');
-            $playerCapturedCon.append(imageElement);
+        PlayerCapturedPieces = (colorOfPiece === local_orientation ? white_captured : black_captured);
+        OppCapturedPieces = (colorOfPiece === local_orientation ? black_captured : white_captured);
+
+        if (colorOfPiece === local_orientation) {
+            OppCapturedPieces.push(eliminatedPiece)
+            for (let count = OppCapturedPieces.length; count < OppCapturedPieces.length + 1; count++) {
+                var imageElement = $('<img />', { src: OppCapturedPieces[count-1], }).css('width', '40px').css('height', '40px');
+                $oppCapturedCon.append(imageElement);
+            };
+        } else {
+            PlayerCapturedPieces.push(eliminatedPiece);
+            for (let count = PlayerCapturedPieces.length; count < PlayerCapturedPieces.length + 1; count++) {
+                var imageElement = $('<img />', { src: PlayerCapturedPieces[count-1], }).css('width', '40px').css('height', '40px');
+                $playerCapturedCon.append(imageElement);
+            };
         };
-    };
+    }
 };
 
 const setCombatPieces = (attackingPiece, defendingPiece) => {
@@ -446,32 +470,19 @@ const setCombatPieces = (attackingPiece, defendingPiece) => {
 };
 
 const removeCombatPieces = () => {
-    setTimeout(() => {
-        $attacking_piece.css("visibility","hidden");
-        $defending_piece.css("visibility","hidden");
-        $die.css("visibility","hidden");
-    }, 3000);
+    $attacking_piece.css("visibility","hidden");
+    $defending_piece.css("visibility","hidden");
+    $die.css("visibility","hidden");
 };
 
 const rollAnimStart = (data) => {
-    let dice = document.querySelectorAll("img.dice");
-
     setCombatPieces(data.activePiece.color + data.activePiece.rank, data.targetPiece.color + data.targetPiece.rank);
     $attack_result.text("Rolling for Attack!").css("color", "grey");
-
-    dice.forEach((die) => {
-        die.classList.add("shake");
-    });
 };
 
 const successfullAttack = (rollVal, blitz, white_captured, black_captured, new_boardstate, activePiece, targetPiece) => {
     console.log("successful attack");
-    let dice = document.querySelectorAll("img.dice");
-
-    dice.forEach((die) => {
-        die.classList.remove("shake");
-    });
-
+    
     const dieValue = rollVal;
     if (dieValue == 1) {
         $die.attr("src", "../static/dice/dice_1.png");
@@ -495,7 +506,8 @@ const successfullAttack = (rollVal, blitz, white_captured, black_captured, new_b
         renderPieceListAnim(white_captured, black_captured);
     };
 
-    board.position(new_boardstate);
+    console.log("triggering boardstate move anim from failedAttack");
+    setTimeout(board.position(new_boardstate), 500);
 
     updateAuthRemaining(local_corplist);
     removeCombatPieces();
@@ -503,12 +515,7 @@ const successfullAttack = (rollVal, blitz, white_captured, black_captured, new_b
 
 const failedAttack = (rollVal, blitz, new_boardstate, activePiece, targetPiece) => {
     console.log("failed attack");
-    let dice = document.querySelectorAll("img.dice");
-
-    dice.forEach((die) => {
-        die.classList.remove("shake");
-    });
-
+    
     const dieValue = rollVal;
     if (dieValue == 1) {
         $die.attr("src", "../static/dice/dice_1.png");
@@ -530,7 +537,8 @@ const failedAttack = (rollVal, blitz, new_boardstate, activePiece, targetPiece) 
         $attack_result.text("Failed Attack!").css("color", "red").css("visibility","visible");
     };
 
-    board.position(new_boardstate);
+    console.log("triggering boardstate move anim from failedAttack");
+    setTimeout(board.position(new_boardstate), 500);
 
     updateAuthRemaining(local_corplist);
     removeCombatPieces();
@@ -552,9 +560,9 @@ const resolveAttack = (data) => {
     }
 
     if (data.isSuccessfulAttack) {
-        setTimeout(successfullAttack(data.roll_val, data.isBlitz, local_white_captured, local_black_captured, data.new_boardstate, data.activePiece, data.targetPiece), 3000);
+        successfullAttack(data.roll_val, data.isBlitz, local_white_captured, local_black_captured, data.new_boardstate, data.activePiece, data.targetPiece);
     } else {
-        setTimeout(failedAttack(data.roll_val, data.isBlitz, data.new_boardstate, data.activePiece, data.targetPiece), 3000);
+        failedAttack(data.roll_val, data.isBlitz, data.new_boardstate, data.activePiece, data.targetPiece);
     };
 
     renderActionHistory(data.action_history);
@@ -744,6 +752,8 @@ socket.onmessage = (message) => {
     }
     // On MOVEMENT actionType
     else if(data.actionType=="MOVEMENT") {
+        board.position(local_boardstate, false);
+
         local_corplist = data.corpList;
         local_boardstate = data.new_boardstate;
         local_whiteMove = data.whiteMove;
@@ -756,18 +766,24 @@ socket.onmessage = (message) => {
         // Append a new entry to the movelog
         renderActionHistory(data.action_history);
 
+        board.position(local_boardstate, false);
+
         if (!local_whiteMove && local_isAIGame) {
             startAITurn();
         }
     }
     // On ATTACK_ATTEMPT actionType
     else if(data.actionType=="ATTACK_ATTEMPT") {
+        board.position(local_boardstate, false);
+
         local_corplist = data.corpList;
         local_boardstate = data.new_boardstate;
         local_whiteMove = data.whiteMove;
         local_readyToBlitz = data.readyToBlitz;
         
         resolveAttack(data);
+
+        board.position(local_boardstate, false);
     }
     // On HIGHLIGHT actionType
     else if(data.actionType=="HIGHLIGHT") {
@@ -809,16 +825,18 @@ socket.onmessage = (message) => {
         local_ai_move_list = data.black_moves;
 
         local_ai_action_list.forEach((action, index) => {
-            if (local_ai_move_list[index] != "") {
-                if (action.actionType == "ATTACK_ATTEMPT") {
-                    resolveAttack(action);
-                } else if (local_ai_action_list[index].actionType == "MOVEMENT") {
-                    board.move(local_ai_move_list[index]);
-                    // Append a new entry to the movelog
-                    renderActionHistory(local_ai_action_list[index].action_history);
-                }
-            } else if (action.actionType == "ATTACK_ATTEMPT") {
+            if (action.actionType == "ATTACK_ATTEMPT") {
+                console.log("resolving AI attack");
                 resolveAttack(action);
+                if (!action.isSuccessfulAttack) {
+                    board.position(local_boardstate, false)
+                };
+            } else if (action.actionType == "MOVEMENT") {
+                console.log("resolving AI move");
+                console.log(action);
+                board.position(action.new_boardstate);
+                renderActionHistory(local_ai_action_list[index].action_history);
+                setTimeout(() => {}, 3000);
             }
 
             updateAuthRemaining(local_corplist);
@@ -857,61 +875,113 @@ $(document).on('click','#delegate', () => {
         backdrop: 'static'
     });
 
-    const kingDelegatables = [];
-    $kingDelegateMenuContents.empty();
-    $kingDelegateMenuContents.append($('<h5>').text('Which Piece'));
-    if ((local_whiteMove) === (local_orientation === 'white')) {
-        if (local_whiteMove) {
-            Object.entries(local_corplist.w).forEach((corpKey) => {
-                if (corpKey[0] == 'kingCorp') {
-                    corpKey[1].under_command.forEach((piece) => {
-                        kingDelegatables.push(piece);
-                    });
-                };
-            });
-        } else {
-            Object.entries(local_corplist.b).forEach((corpKey) => {
-                if (corpKey[0] == 'kingCorp') {
-                    corpKey[1].under_command.forEach((piece) => {
-                        kingDelegatables.push(piece);
-                    });
-                };
-            });
-        };
+    if (local_isAIGame) {
+        const kingDelegatables = [];
+        $kingDelegateMenuContents.empty();
+        $kingDelegateMenuContents.append($('<h5>').text('Which Piece'));
+        if ((local_whiteMove) === true) {
+            if (local_whiteMove) {
+                Object.entries(local_corplist.w).forEach((corpKey) => {
+                    if (corpKey[0] == 'kingCorp') {
+                        corpKey[1].under_command.forEach((piece) => {
+                            kingDelegatables.push(piece);
+                        });
+                    };
+                });
+            } else {
+                Object.entries(local_corplist.b).forEach((corpKey) => {
+                    if (corpKey[0] == 'kingCorp') {
+                        corpKey[1].under_command.forEach((piece) => {
+                            kingDelegatables.push(piece);
+                        });
+                    };
+                });
+            };
 
-        kingDelegatables.forEach((piece) => {
-            const $interimCheckGroup = $('<div>', {class: "form-check"});
-            $interimCheckGroup.append($('<input>', {class: "form-check-input", type:"radio", name:`kingDelegateablesRadio`, id:`${piece.color}${piece.rank}-radio`, value:JSON.stringify(piece)}));
-            $interimCheckGroup.append($('<label>', {class: "form-check-label", for:`${piece.color}${piece.rank}-radio`}).text(`${piece.color}${piece.rank} at ${piece.pos}`));
-            $kingDelegateMenuContents.append($interimCheckGroup);
-        });
-    }
-    
-    const targetCorps = [];
-    $targetCorpMenuContents.empty();
-    $targetCorpMenuContents.append($('<h5>').text('Which Destination Corp'));
-    if ((!local_whiteMove) === (local_orientation === 'black')) {
+            kingDelegatables.forEach((piece) => {
+                const $interimCheckGroup = $('<div>', {class: "form-check"});
+                $interimCheckGroup.append($('<input>', {class: "form-check-input", type:"radio", name:`kingDelegateablesRadio`, id:`${piece.color}${piece.rank}-radio`, value:JSON.stringify(piece)}));
+                $interimCheckGroup.append($('<label>', {class: "form-check-label", for:`${piece.color}${piece.rank}-radio`}).text(`${piece.color}${piece.rank} at ${piece.pos}`));
+                $kingDelegateMenuContents.append($interimCheckGroup);
+            });
+        }
+        
+        const targetCorps = [];
+        $targetCorpMenuContents.empty();
+        $targetCorpMenuContents.append($('<h5>').text('Which Destination Corp'));
         if (local_whiteMove) {
             Object.entries(local_corplist.w).forEach((corpKey) => {
                 if (corpKey[0] != 'kingCorp' && corpKey[1].under_command.length <= 6) {
                     targetCorps.push(corpKey[0]);
                 };
             });
-        } else {
-            Object.entries(local_corplist.b).forEach((corpKey) => {
-                if (corpKey[0] != 'kingCorp' && corpKey[1].under_command.length <= 6) {
-                    targetCorps.push(corpKey[0]);
-                };
+
+            targetCorps.forEach((corp) => {
+                const $interimCheckGroup = $('<div>', {class: "form-check"});
+                $interimCheckGroup.append($('<input>', {class: "form-check-input", type:"radio", name:`targetCorpRadio`, id:`${corp}-radio`, value:corp}));
+                $interimCheckGroup.append($('<label>', {class: "form-check-label", for:`${corp}-radio`}).text(corp));
+                $targetCorpMenuContents.append($interimCheckGroup);
             });
         };
 
-        targetCorps.forEach((corp) => {
-            const $interimCheckGroup = $('<div>', {class: "form-check"});
-            $interimCheckGroup.append($('<input>', {class: "form-check-input", type:"radio", name:`targetCorpRadio`, id:`${corp}-radio`, value:corp}));
-            $interimCheckGroup.append($('<label>', {class: "form-check-label", for:`${corp}-radio`}).text(corp));
-            $targetCorpMenuContents.append($interimCheckGroup);
-        });
-    } 
+            
+    } else {
+        const kingDelegatables = [];
+        $kingDelegateMenuContents.empty();
+        $kingDelegateMenuContents.append($('<h5>').text('Which Piece'));
+        if ((local_whiteMove) === (local_orientation === 'white')) {
+            if (local_whiteMove) {
+                Object.entries(local_corplist.w).forEach((corpKey) => {
+                    if (corpKey[0] == 'kingCorp') {
+                        corpKey[1].under_command.forEach((piece) => {
+                            kingDelegatables.push(piece);
+                        });
+                    };
+                });
+            } else {
+                Object.entries(local_corplist.b).forEach((corpKey) => {
+                    if (corpKey[0] == 'kingCorp') {
+                        corpKey[1].under_command.forEach((piece) => {
+                            kingDelegatables.push(piece);
+                        });
+                    };
+                });
+            };
+
+            kingDelegatables.forEach((piece) => {
+                const $interimCheckGroup = $('<div>', {class: "form-check"});
+                $interimCheckGroup.append($('<input>', {class: "form-check-input", type:"radio", name:`kingDelegateablesRadio`, id:`${piece.color}${piece.rank}-radio`, value:JSON.stringify(piece)}));
+                $interimCheckGroup.append($('<label>', {class: "form-check-label", for:`${piece.color}${piece.rank}-radio`}).text(`${piece.color}${piece.rank} at ${piece.pos}`));
+                $kingDelegateMenuContents.append($interimCheckGroup);
+            });
+        }
+        
+        const targetCorps = [];
+        $targetCorpMenuContents.empty();
+        $targetCorpMenuContents.append($('<h5>').text('Which Destination Corp'));
+        if ((!local_whiteMove) === (local_orientation === 'black')) {
+            if (local_whiteMove) {
+                Object.entries(local_corplist.w).forEach((corpKey) => {
+                    if (corpKey[0] != 'kingCorp' && corpKey[1].under_command.length <= 6) {
+                        targetCorps.push(corpKey[0]);
+                    };
+                });
+            } else {
+                Object.entries(local_corplist.b).forEach((corpKey) => {
+                    if (corpKey[0] != 'kingCorp' && corpKey[1].under_command.length <= 6) {
+                        targetCorps.push(corpKey[0]);
+                    };
+                });
+            };
+
+            targetCorps.forEach((corp) => {
+                const $interimCheckGroup = $('<div>', {class: "form-check"});
+                $interimCheckGroup.append($('<input>', {class: "form-check-input", type:"radio", name:`targetCorpRadio`, id:`${corp}-radio`, value:corp}));
+                $interimCheckGroup.append($('<label>', {class: "form-check-label", for:`${corp}-radio`}).text(corp));
+                $targetCorpMenuContents.append($interimCheckGroup);
+            });
+        };
+    };
 });
 
 // 
