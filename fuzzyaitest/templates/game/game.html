@@ -78,10 +78,10 @@
             <!-- Right Side Column -->
             <div class="col-3 px-0">
                 <!-- Move Log -->
-                <div id='moves' class="card h-50">
+                <div id='moves' class="card mh-50 h-50">
                     <div class="card-header">Move Log</div>
-                    <div id="move_log" class="card-body mh-100 py-2 overflow-auto" style="bottom: 1rem;">
-                        {% for a in actions %}<b>{{ a.id }}</b>: {{ m.content }}<br>{% endfor %}
+                    <div id="move_log" class="card-body py-2 position-absolute overflow-auto" style="max-height: 75%; max-width: 98%; bottom: 1rem;">
+                        {% for a in actions %}<div class=""><b>{{ a.id }}</b>: {{ m.content }}<br></div>{% endfor %}
                     </div>
                 </div>
                 

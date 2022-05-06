@@ -560,6 +560,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
                             
                             sourcePos = AIAction["activePiece"]["pos"]
                             targetPos = AIAction["targetPiece"]["pos"]
+                            AIAction["new_boardstate"] = new_boardstate
                             
                             if isValidAction:
                                 action_history = await self.log_action(actionToBeLogged)
