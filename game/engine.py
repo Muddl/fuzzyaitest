@@ -567,6 +567,8 @@ class Boardstate:
         
         if (selected.getTraits() == self.corpLists[friendly][selectedCorp]["leader"]): # Confirm piece is a bishop & the leader of its corp
             if self.corpLists[friendly][selectedCorp]["command_authority_remaining"] == 1: # Attacks/Captures/Full Movement
+                in_range = [pos for pos in base_list if str(self.board.get(pos))[0] == enemy]
+                
                 first_iter_moves = [pos for pos in base_list if pos not in self.board]
                 movement = movement + first_iter_moves
                 second_iter_moves = []
