@@ -1,20 +1,42 @@
 # Dockerfile
 
 # Pull base image
-FROM python:3.10
+FROM python:3.10 as base
 
 # Set environment variables
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+ENV PYTHONFAULTHANDLER 1
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+ENV DEBUG 0
 
-# Set work directory
-WORKDIR /code
+# Dependency installation img
+FROM base AS python-deps
 
-# Install dependencies
+# Install dependencies & compilation dependencies
 RUN pip install pipenv
-COPY Pipfile Pipfile.lock /code/
-RUN pipenv install wheel
-RUN pipenv install --system
+RUN apt-get update && apt-get install -y --no-install-recommends gcc
+
+# Install python dependencies in /.venv
+COPY Pipfile .
+COPY Pipfile.lock .
+RUN PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy
+
+FROM base AS runtime
+
+# Copy virtual env from python-deps stage
+COPY --from=python-deps /.venv /.venv
+ENV PATH="/.venv/bin:$PATH"
+
+# Create and switch to a new user
+RUN useradd --create-home appuser
+WORKDIR /home/appuser
+USER appuser
 
 # Copy project
-COPY . /code/
+COPY . .
+
+RUN python manage.py collectstatic --noinput
+
+CMD daphne fuzzyaitest.asgi:application --port $PORT --bind 0.0.0.0 -v2
